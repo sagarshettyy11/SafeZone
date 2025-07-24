@@ -13,7 +13,7 @@ class WelcomeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Replace with any illustration you like
-              Icon(Icons.work, size: 100, color: Colors.blue[800]),
+              Image.asset('assets/icon/icon.jpg', width: 120, height: 120),
               const SizedBox(height: 32),
               const Text(
                 "Safe Zone",
