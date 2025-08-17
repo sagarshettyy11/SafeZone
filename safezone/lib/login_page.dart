@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -12,9 +12,7 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // -------------------
   // LOGIN FUNCTION
-  // -------------------
   Future<void> _login() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
@@ -51,9 +49,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // -------------------
   // PASSWORD RESET
-  // -------------------
   Future<void> _resetPassword() async {
     final email = emailController.text.trim();
 
@@ -107,19 +103,19 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   "Login here",
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: Color(0xFF1E4DE8),
                   ),
                 ),
-                const SizedBox(height: 12),
-                const Text(
+                const SizedBox(height: 8),
+                Text(
                   "Welcome back you've\nbeen missed!",
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -128,18 +124,38 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 32),
                 TextField(
                   controller: emailController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Email',
-                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Color(0xFFE8EAFA),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: Colors.transparent,
+                        width: 0,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
                 TextField(
                   controller: passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Password',
-                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Color(0xFFE8EAFA),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -147,10 +163,11 @@ class _LoginPageState extends State<LoginPage> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: _resetPassword,
-                    child: const Text(
+                    child: Text(
                       "Forgot your password?",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w400,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                         color: Colors.blue,
                       ),
                     ),
@@ -162,33 +179,37 @@ class _LoginPageState extends State<LoginPage> {
                   height: 48,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: Color(0xFF1E4DE8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     onPressed: _login,
-                    child: const Text(
+                    child: Text(
                       "Sign in",
-                      style: TextStyle(fontSize: 18),
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
                 GestureDetector(
                   onTap: () => Navigator.pushNamed(context, '/register'),
-                  child: const Text(
+                  child: Text(
                     "Create new account",
-                    style: TextStyle(
+                    style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
                       color: Colors.blue,
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   "Or continue with",
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w400,
                     color: Colors.black54,
                   ),

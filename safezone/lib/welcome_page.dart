@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -13,41 +14,58 @@ class WelcomeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Replace with any illustration you like
-              Image.asset('assets/icon/icon.jpg', width: 120, height: 120),
+              Image.asset('assets/icon/icon.jpg', width: 200, height: 200),
               const SizedBox(height: 32),
-              const Text(
+              Text(
                 "Safe Zone",
-                style: TextStyle(
-                  fontSize: 24,
+                style: GoogleFonts.poppins(
+                  fontSize: 26,
                   fontWeight: FontWeight.bold,
                   color: Colors.blue,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
-              const Text(
+              const SizedBox(height: 6),
+              Text(
                 "Instant Safety at Your Fingertips",
-                style: TextStyle(fontSize: 16, color: Colors.black54),
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 50),
               SizedBox(
                 width: double.infinity,
+                height: 60,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pushNamed(context, '/login'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                  child: const Text("Login"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    "Login",
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               TextButton(
                 onPressed: () => Navigator.pushNamed(context, '/register'),
-                child: const Text(
+                child: Text(
                   "Register",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
                     color: Colors.blue,
-                    fontSize: 16,
+                    fontSize: 18,
                   ),
                 ),
               ),
