@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+// Import your actual pages
+import 'features/home_page.dart';
+import 'features/map_page.dart';
+import 'features/emergency_page.dart';
+import 'features/complaint_page.dart';
+import 'features/user_profile.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -11,13 +19,13 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
 
-  // Placeholder pages (replace with your actual pages later)
+  // Replace placeholders with actual pages
   final List<Widget> _pages = const [
-    Center(child: Text("Home Page", style: TextStyle(fontSize: 22))),
-    Center(child: Text("Map Page", style: TextStyle(fontSize: 22))),
-    Center(child: Text("SOS Page", style: TextStyle(fontSize: 22))),
-    Center(child: Text("Complaint Page", style: TextStyle(fontSize: 22))),
-    Center(child: Text("Profile Page", style: TextStyle(fontSize: 22))),
+    HomePage(),
+    MapPage(),
+    EmergencyPage(),
+    ComplaintPage(),
+    SettingsPage(),
   ];
 
   @override
@@ -36,15 +44,6 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  // Logout function
-  Future<void> _logout(BuildContext context) async {
-    await Supabase.instance.client.auth.signOut();
-
-    if (!context.mounted) return;
-
-    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-  }
-
   // Handle bottom nav taps
   void _onItemTapped(int index) {
     setState(() {
@@ -55,15 +54,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Dashboard"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _logout(context),
-          ),
-        ],
-      ),
+      appBar: AppBar(),
       body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -72,11 +63,23 @@ class _DashboardPageState extends State<DashboardPage> {
         unselectedItemColor: Colors.black,
         type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
-          BottomNavigationBarItem(icon: Icon(Icons.warning), label: 'SOS'),
-          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Complaint'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(icon: Icon(CupertinoIcons.map), label: 'Map'),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.exclamationmark_triangle_fill),
+            label: 'SOS',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.flag),
+            label: 'Complaint',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.person),
+            label: 'Profile',
+          ),
         ],
       ),
     );
