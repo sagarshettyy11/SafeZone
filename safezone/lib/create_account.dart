@@ -108,6 +108,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   controller: emailController,
                   decoration: InputDecoration(
                     labelText: 'Email',
+                    labelStyle: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
                     filled: true,
                     fillColor: Color(0xFFE8EAFA),
                     border: OutlineInputBorder(
@@ -129,6 +134,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'Password',
+                    labelStyle: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
                     filled: true,
                     fillColor: Color(0xFFE8EAFA),
                     border: OutlineInputBorder(
@@ -150,6 +160,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
+                    labelStyle: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
                     filled: true,
                     fillColor: Color(0xFFE8EAFA),
                     border: OutlineInputBorder(

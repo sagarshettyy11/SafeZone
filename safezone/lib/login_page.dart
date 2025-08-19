@@ -126,6 +126,11 @@ class _LoginPageState extends State<LoginPage> {
                   controller: emailController,
                   decoration: InputDecoration(
                     labelText: 'Email',
+                    labelStyle: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
                     filled: true,
                     fillColor: Color(0xFFE8EAFA),
                     border: OutlineInputBorder(
@@ -147,6 +152,11 @@ class _LoginPageState extends State<LoginPage> {
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'Password',
+                    labelStyle: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
                     filled: true,
                     fillColor: Color(0xFFE8EAFA),
                     border: OutlineInputBorder(
