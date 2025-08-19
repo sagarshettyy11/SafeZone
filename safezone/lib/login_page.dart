@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:safezone/features/home_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatefulWidget {
@@ -34,7 +35,10 @@ class _LoginPageState extends State<LoginPage> {
       if (response.user != null) {
         if (!mounted) return;
         // Redirect to Dashboard after login success
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
