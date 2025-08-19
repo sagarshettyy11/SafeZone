@@ -25,7 +25,12 @@ class HomePage extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.account_circle),
             iconSize: 32,
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SettingsPage()),
+              );
+            },
           ),
         ],
       ),
