@@ -6,7 +6,6 @@ import 'welcome_page.dart';
 import 'login_page.dart';
 import 'create_account.dart';
 import 'reset_password.dart';
-import 'dashboard_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,7 +61,6 @@ class _MyAppState extends State<MyApp> {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const CreateAccountPage(),
         '/reset-password': (context) => const ResetPasswordPage(),
-        '/dashboard': (context) => const DashboardPage(),
       },
     );
   }

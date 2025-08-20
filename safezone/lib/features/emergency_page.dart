@@ -128,7 +128,7 @@ class EmergencyPage extends StatelessWidget {
               "Share My Location",
               style: GoogleFonts.poppins(
                 fontSize: 18,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
             ),
