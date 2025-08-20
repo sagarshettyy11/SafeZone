@@ -270,7 +270,7 @@ class _MapPageState extends State<MapPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Google Maps",
+          "Safety Map",
           style: GoogleFonts.poppins(fontSize: 26, fontWeight: FontWeight.bold),
         ),
         actions: [

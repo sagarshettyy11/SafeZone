@@ -1,196 +1,217 @@
 import 'package:flutter/material.dart';
-import 'package:safezone/features/map_page.dart';
-import 'package:safezone/features/user_profile.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'complaint_page.dart';
-import 'emergency_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class HomePage extends StatelessWidget {
+// Import your actual pages
+import 'map_page.dart';
+import 'emergency_page.dart';
+import 'complaint_page.dart';
+import 'user_profile.dart'; // assumes class SettingsPage (your current naming)
+
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuth();
+  }
+
+  void _checkAuth() {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+      });
+    }
+  }
+
+  void _onItemTapped(int index) => setState(() => _selectedIndex = index);
+
+  List<Widget> get _pages => [
+    HomeDashboardTab(onJumpToTab: _onItemTapped),
+    const MapPage(),
+    const EmergencyPage(),
+    const ComplaintPage(),
+    const SettingsPage(), // from user_profile.dart in your code
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Text(
-          "SafeZone",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 26),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications),
-            iconSize: 32,
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: Icon(Icons.account_circle),
-            iconSize: 32,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SettingsPage()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Greeting Section
-            Text(
-              "Hello, Sagar 👋",
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              "Stay safe today!",
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
-              ),
-            ),
-            SizedBox(height: 20),
-
-            // Emergency Button (highlighted)
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => EmergencyPage()),
-                );
-              },
-              child: Container(
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(width: 10),
-                    Text(
-                      "Emergency Help",
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+      // Show the AppBar only for the Home tab; other tabs can use their own AppBars.
+      appBar: _selectedIndex == 0
+          ? AppBar(
+              automaticallyImplyLeading: false,
+              title: Text(
+                "SafeZone",
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 26,
                 ),
               ),
-            ),
-            SizedBox(height: 20),
-
-            // Options Grid
-            GridView.count(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.2,
-              children: [
-                _buildOptionCard(
-                  context,
-                  icon: Icons.report_problem,
-                  label: "Report Complaint",
-                  color: Colors.orange,
-                  page: ComplaintPage(),
-                  labelStyle: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.notifications),
+                  iconSize: 32,
+                  onPressed: () {},
                 ),
-                _buildOptionCard(
-                  context,
-                  icon: Icons.map,
-                  label: "Safety Map",
-                  color: Colors.blue,
-                  page: MapPage(),
-                  labelStyle: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                _buildOptionCard(
-                  context,
-                  icon: Icons.list_alt,
-                  label: "My Reports",
-                  color: Colors.green,
-                  page: Placeholder(),
-                  labelStyle: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                _buildOptionCard(
-                  context,
-                  icon: Icons.settings,
-                  label: "Settings",
-                  color: Colors.grey,
-                  page: SettingsPage(),
-                  labelStyle: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.account_circle),
+                  iconSize: 32,
+                  // jump to Profile tab instead of pushing a new route
+                  onPressed: () => _onItemTapped(4),
                 ),
               ],
-            ),
-          ],
-        ),
-      ),
+            )
+          : null,
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.report), label: "Complaint"),
-          BottomNavigationBarItem(icon: Icon(Icons.sos), label: "Emergency"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.black,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(icon: Icon(CupertinoIcons.map), label: 'Map'),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.exclamationmark_triangle_fill),
+            label: 'SOS',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.flag),
+            label: 'Complaint',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.person),
+            label: 'Profile',
+          ),
         ],
-        onTap: (index) {
-          if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => ComplaintPage()),
-            );
-          } else if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => EmergencyPage()),
-            );
-          }
-        },
+      ),
+    );
+  }
+}
+
+class HomeDashboardTab extends StatelessWidget {
+  final void Function(int) onJumpToTab;
+  const HomeDashboardTab({super.key, required this.onJumpToTab});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Greeting
+          Text(
+            "Hello, Sagar 👋",
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "Stay safe today!",
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Emergency Button -> jumps to SOS tab
+          GestureDetector(
+            onTap: () => onJumpToTab(2),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(width: 10),
+                  Text(
+                    "Emergency Help",
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Options Grid -> switches tabs instead of Navigator.push
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.2,
+            children: [
+              _buildOptionCard(
+                icon: Icons.report_problem,
+                label: "Report Complaint",
+                color: Colors.orange,
+                onTap: () => onJumpToTab(3),
+              ),
+              _buildOptionCard(
+                icon: Icons.map,
+                label: "Safety Map",
+                color: Colors.blue,
+                onTap: () => onJumpToTab(1),
+              ),
+              _buildOptionCard(
+                icon: Icons.list_alt,
+                label: "My Reports",
+                color: Colors.green,
+                onTap: () {},
+              ),
+              _buildOptionCard(
+                icon: Icons.settings,
+                label: "Profile / Settings",
+                color: Colors.grey,
+                onTap: () => onJumpToTab(4),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildOptionCard(
-    BuildContext context, {
+  Widget _buildOptionCard({
     required IconData icon,
     required String label,
     required Color color,
-    required Widget page,
-    TextStyle? labelStyle,
+    required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => page));
-      },
+      onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.8),
+          color: color.withValues(alpha: 0.8), // <- safer than withValues
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
@@ -198,15 +219,14 @@ class HomePage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, color: Colors.white, size: 36),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 label,
-                style:
-                    labelStyle ??
-                    GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),
