@@ -5,24 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Import your actual pages
 import 'map_page.dart';
+import '../chatbot.dart'; // ✅ Import chatbot screen
 import 'emergency_page.dart';
 import 'complaint_page.dart';
 import 'user_profile.dart'; // assumes class SettingsPage (your current naming)
-
-// 🚀 Chatbot Page
-class ChatbotPage extends StatelessWidget {
-  const ChatbotPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("AI Chatbot")),
-      body: const Center(
-        child: Text("Chatbot coming soon...", style: TextStyle(fontSize: 18)),
-      ),
-    );
-  }
-}
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -56,13 +42,12 @@ class _HomePageState extends State<HomePage> {
     const MapPage(),
     const EmergencyPage(),
     const ComplaintPage(),
-    const SettingsPage(), // from user_profile.dart in your code
+    const SettingsPage(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Show the AppBar only for the Home tab
       appBar: _selectedIndex == 0
           ? AppBar(
               automaticallyImplyLeading: false,
@@ -82,7 +67,6 @@ class _HomePageState extends State<HomePage> {
                 IconButton(
                   icon: const Icon(Icons.account_circle),
                   iconSize: 32,
-                  // jump to Profile tab instead of pushing a new route
                   onPressed: () => _onItemTapped(4),
                 ),
               ],
@@ -118,14 +102,20 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
 
-      // ✅ Floating Chatbot Button
+      // ✅ Floating AI Assistant Button
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.blue,
-        child: const Icon(Icons.chat, size: 28, color: Colors.white),
+        tooltip: "AI Assistant",
+        shape: const CircleBorder(),
+        child: const Icon(
+          CupertinoIcons.chat_bubble_2_fill,
+          size: 28,
+          color: Colors.white,
+        ),
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const ChatbotPage()),
+            MaterialPageRoute(builder: (_) => const ChatbotScreen()),
           );
         },
       ),
@@ -190,7 +180,7 @@ class HomeDashboardTab extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Options Grid -> switches tabs instead of Navigator.push
+          // Options Grid -> switches tabs
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -240,7 +230,7 @@ class HomeDashboardTab extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.8),
+          color: color.withValues(alpha: 0.8), // ✅ modern API
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
