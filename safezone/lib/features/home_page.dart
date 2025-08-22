@@ -9,6 +9,21 @@ import 'emergency_page.dart';
 import 'complaint_page.dart';
 import 'user_profile.dart'; // assumes class SettingsPage (your current naming)
 
+// 🚀 Chatbot Page
+class ChatbotPage extends StatelessWidget {
+  const ChatbotPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("AI Chatbot")),
+      body: const Center(
+        child: Text("Chatbot coming soon...", style: TextStyle(fontSize: 18)),
+      ),
+    );
+  }
+}
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -47,7 +62,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Show the AppBar only for the Home tab; other tabs can use their own AppBars.
+      // Show the AppBar only for the Home tab
       appBar: _selectedIndex == 0
           ? AppBar(
               automaticallyImplyLeading: false,
@@ -73,7 +88,9 @@ class _HomePageState extends State<HomePage> {
               ],
             )
           : null,
+
       body: IndexedStack(index: _selectedIndex, children: _pages),
+
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -99,6 +116,18 @@ class _HomePageState extends State<HomePage> {
             label: 'Profile',
           ),
         ],
+      ),
+
+      // ✅ Floating Chatbot Button
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.blue,
+        child: const Icon(Icons.chat, size: 28, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ChatbotPage()),
+          );
+        },
       ),
     );
   }
@@ -211,7 +240,7 @@ class HomeDashboardTab extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.8), // <- safer than withValues
+          color: color.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
