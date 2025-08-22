@@ -269,6 +269,7 @@ class _MapPageState extends State<MapPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           "Safety Map",
           style: GoogleFonts.poppins(fontSize: 26, fontWeight: FontWeight.bold),

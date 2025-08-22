@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:safezone/user_details.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CreateAccountPage extends StatefulWidget {
@@ -39,6 +40,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       final response = await Supabase.instance.client.auth.signUp(
         email: email,
         password: password,
+        // 👇 Optional: stops redirect for email verification
+        // emailRedirectTo: null,
       );
 
       if (response.user != null) {
@@ -46,8 +49,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Account created successfully!')),
         );
-        // ✅ Go to dashboard after successful signup
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        // 🚀 Go to User Details Page after signup
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => UserDetailsPage()),
+        );
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -90,7 +96,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   style: GoogleFonts.poppins(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E4DE8),
+                    color: const Color(0xFF1E4DE8),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -104,6 +110,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   ),
                 ),
                 const SizedBox(height: 32),
+
+                // Email Field
                 TextField(
                   controller: emailController,
                   decoration: InputDecoration(
@@ -114,21 +122,23 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                       color: Colors.grey[700],
                     ),
                     filled: true,
-                    fillColor: Color(0xFFE8EAFA),
+                    fillColor: const Color(0xFFE8EAFA),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: Colors.transparent,
-                        width: 0,
-                      ),
+                      borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                      borderSide: const BorderSide(
+                        color: Colors.blue,
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 18),
+
+                // Password Field
                 TextField(
                   controller: passwordController,
                   obscureText: true,
@@ -140,21 +150,23 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                       color: Colors.grey[700],
                     ),
                     filled: true,
-                    fillColor: Color(0xFFE8EAFA),
+                    fillColor: const Color(0xFFE8EAFA),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: Colors.transparent,
-                        width: 0,
-                      ),
+                      borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                      borderSide: const BorderSide(
+                        color: Colors.blue,
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 18),
+
+                // Confirm Password Field
                 TextField(
                   controller: confirmPasswordController,
                   obscureText: true,
@@ -166,27 +178,29 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                       color: Colors.grey[700],
                     ),
                     filled: true,
-                    fillColor: Color(0xFFE8EAFA),
+                    fillColor: const Color(0xFFE8EAFA),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: Colors.transparent,
-                        width: 0,
-                      ),
+                      borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                      borderSide: const BorderSide(
+                        color: Colors.blue,
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 18),
+
+                // Create Account Button
                 SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF1E4DE8),
+                      backgroundColor: const Color(0xFF1E4DE8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -203,6 +217,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   ),
                 ),
                 const SizedBox(height: 14),
+
+                // Login Redirect
                 GestureDetector(
                   onTap: () => Navigator.pushNamed(context, '/login'),
                   child: Text(
@@ -214,6 +230,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // Social Login Section
                 Text(
                   "Or continue with",
                   style: GoogleFonts.poppins(

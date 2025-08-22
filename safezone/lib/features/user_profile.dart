@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:safezone/settings/account_page.dart';
+import 'package:safezone/settings/help_page.dart';
+import 'package:safezone/settings/invite_friend.dart';
+import 'package:safezone/settings/notification.dart';
+import 'package:safezone/settings/privacy_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -66,27 +71,67 @@ class SettingsPage extends StatelessWidget {
 
           const Divider(color: Colors.grey),
 
-          // Account, Privacy, Chats, Notifications
-          buildSettingsItem(icon: Icons.key, text: "Account", context: context),
+          // Account item -> navigates to AccountPage
+          buildSettingsItem(
+            icon: Icons.key,
+            text: "Account",
+            context: context,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AccountPage()),
+              );
+            },
+          ),
+
+          // Other items
           buildSettingsItem(
             icon: Icons.lock_outline,
             text: "Privacy",
             context: context,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const PrivacyPage()),
+              );
+            },
           ),
           buildSettingsItem(
             icon: Icons.notifications_none,
             text: "Notifications",
             context: context,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationPage(),
+                ),
+              );
+            },
           ),
           buildSettingsItem(
             icon: Icons.help_outline,
             text: "Help",
             context: context,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HelpPage()),
+              );
+            },
           ),
           buildSettingsItem(
             icon: Icons.group_add,
             text: "Invite a Friend",
             context: context,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const InviteFriendPage(),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -97,6 +142,7 @@ class SettingsPage extends StatelessWidget {
     required IconData icon,
     required String text,
     required BuildContext context,
+    VoidCallback? onTap,
   }) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
@@ -113,7 +159,7 @@ class SettingsPage extends StatelessWidget {
         color: Colors.grey,
         size: 16,
       ),
-      onTap: () {},
+      onTap: onTap, // ✅ FIX: use the passed callback
     );
   }
 }

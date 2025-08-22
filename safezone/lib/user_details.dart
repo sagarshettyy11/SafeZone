@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:safezone/features/home_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserDetailsPage extends StatefulWidget {
@@ -31,15 +32,19 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Insert or update profile data in Supabase
-      await Supabase.instance.client.from('public.profiles').upsert({
-        'id': user.id, // id should match auth.users.id
-        'display_name': displayNameController.text.trim(),
-        'username': usernameController.text.trim(),
-        'phone': phoneController.text.trim(),
-        'emergency_contact': emergencyController.text.trim(),
-        'address': addressController.text.trim(),
-      }, onConflict: 'id');
+      final response = await Supabase.instance.client
+          .from('profiles') // ✅ just the table name
+          .upsert({
+            'id': user.id,
+            'display_name': displayNameController.text.trim(),
+            'username': usernameController.text.trim(),
+            'phone': phoneController.text.trim(),
+            'emergency_contact': emergencyController.text.trim(),
+            'address': addressController.text.trim(),
+          })
+          .select(); // ✅ return inserted/updated row for debugging
+
+      debugPrint("Supabase response: $response");
 
       if (!mounted) return;
 
@@ -47,8 +52,12 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
         const SnackBar(content: Text("Details saved successfully!")),
       );
 
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
     } catch (error) {
+      debugPrint("Supabase error: $error"); // ✅ full log
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
