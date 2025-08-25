@@ -78,25 +78,40 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
+
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.black,
-        type: BottomNavigationBarType.fixed,
+
+        // ✅ Apply to both selected & unselected
+        selectedLabelStyle: GoogleFonts.poppins(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: GoogleFonts.poppins(
+          fontSize: 10,
+          fontWeight: FontWeight.w400,
+        ),
+
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.home),
+            icon: ImageIcon(AssetImage("assets/icon/home.png")),
             label: 'Home',
           ),
-          BottomNavigationBarItem(icon: Icon(CupertinoIcons.map), label: 'Map'),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.exclamationmark_triangle_fill),
+            icon: ImageIcon(AssetImage("assets/icon/location.png")),
+            label: 'Map',
+          ),
+          BottomNavigationBarItem(
+            icon: ImageIcon(AssetImage("assets/icon/emergency.png")),
             label: 'SOS',
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.flag),
+            icon: ImageIcon(AssetImage("assets/icon/complaint.png")),
             label: 'Complaint',
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.person),
+            icon: ImageIcon(AssetImage("assets/icon/profile.png")),
             label: 'Profile',
           ),
         ],
