@@ -22,20 +22,24 @@ class _NotificationPageState extends State<NotificationPage> {
           style: GoogleFonts.poppins(
             fontSize: 26,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Colors.black,
           ),
         ),
         backgroundColor: Colors.white,
       ),
       body: Container(
-        color: Colors.black,
+        color: Colors.white,
         child: ListView(
           children: [
             // Show Notifications
             SwitchListTile(
               title: Text(
                 "Show notifications",
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
+                style: GoogleFonts.poppins(
+                  color: Colors.black,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               value: showNotifications,
               onChanged: (value) {
@@ -52,11 +56,19 @@ class _NotificationPageState extends State<NotificationPage> {
             SwitchListTile(
               title: Text(
                 "Reminders",
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
+                style: GoogleFonts.poppins(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               subtitle: Text(
                 "Get occasional reminders about messages, calls or status updates you haven’t seen.",
-                style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
+                style: GoogleFonts.poppins(
+                  color: Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
               value: reminders,
               onChanged: (value) {

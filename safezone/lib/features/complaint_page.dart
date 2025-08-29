@@ -227,7 +227,7 @@ class ComplaintPageState extends State<ComplaintPage> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor: Color(0xFF1E4DE8),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 onPressed: () {

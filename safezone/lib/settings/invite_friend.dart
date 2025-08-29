@@ -7,20 +7,42 @@ class InviteFriendPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.white,
         elevation: 0,
         title: Text(
           "Invite a Friend",
-          style: GoogleFonts.poppins(color: Colors.white, fontSize: 20),
+          style: GoogleFonts.poppins(
+            color: Colors.black,
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(children: [_buildItem(context, "Invite via Link")]),
+          ),
+        ],
       ),
     );
   }
+}
+
+Widget _buildItem(BuildContext context, String title) {
+  return ListTile(
+    title: Text(
+      title,
+      style: GoogleFonts.poppins(
+        color: Colors.black,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+    onTap: () {},
+  );
 }
