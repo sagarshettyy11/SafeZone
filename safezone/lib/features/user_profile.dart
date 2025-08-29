@@ -150,7 +150,7 @@ class SettingsPage extends StatelessWidget {
         text,
         style: GoogleFonts.poppins(
           fontSize: 16,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
           color: Colors.black,
         ),
       ),

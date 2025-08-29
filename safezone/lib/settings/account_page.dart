@@ -7,18 +7,18 @@ class AccountPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: Text(
           "Account",
-          style: GoogleFonts.poppins(color: Colors.white, fontSize: 20),
+          style: GoogleFonts.poppins(
+            color: Colors.black,
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: false,
       ),
@@ -32,6 +32,7 @@ class AccountPage extends StatelessWidget {
                 _buildTile(context, "Change Contact number"),
                 _buildTile(context, "Change Emergency Contact"),
                 const Divider(color: Colors.grey),
+                _buildTile(context, "Download Account Information"),
                 _buildTile(context, "Delete my account"),
               ],
             ),
@@ -41,7 +42,7 @@ class AccountPage extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: Colors.blue,
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -51,11 +52,15 @@ class AccountPage extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Logged out successfully")),
                 );
-                Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, '/login');
               },
-              child: const Text(
+              child: Text(
                 "Logout",
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -68,7 +73,11 @@ class AccountPage extends StatelessWidget {
     return ListTile(
       title: Text(
         title,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
+        style: GoogleFonts.poppins(
+          color: Colors.black,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       trailing: const Icon(
         Icons.arrow_forward_ios,

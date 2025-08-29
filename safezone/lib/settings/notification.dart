@@ -17,8 +17,15 @@ class _NotificationPageState extends State<NotificationPage> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text("Notifications"),
-        backgroundColor: Colors.black,
+        title: Text(
+          "Notifications",
+          style: GoogleFonts.poppins(
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.white,
       ),
       body: Container(
         color: Colors.black,
