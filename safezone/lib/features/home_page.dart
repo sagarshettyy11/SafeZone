@@ -79,11 +79,8 @@ class _HomePageState extends State<HomePage> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
-
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.black,
-
-        // ✅ Apply to both selected & unselected
         selectedLabelStyle: GoogleFonts.poppins(
           fontSize: 10,
           fontWeight: FontWeight.w600,
@@ -92,7 +89,6 @@ class _HomePageState extends State<HomePage> {
           fontSize: 10,
           fontWeight: FontWeight.w400,
         ),
-
         items: const [
           BottomNavigationBarItem(
             icon: ImageIcon(AssetImage("assets/icon/home.png")),
@@ -142,6 +138,21 @@ class HomeDashboardTab extends StatelessWidget {
   final void Function(int) onJumpToTab;
   const HomeDashboardTab({super.key, required this.onJumpToTab});
 
+  /// ✅ Fetch user full name from Supabase `profiles` table
+  Future<String?> _fetchDisplayName() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return null;
+
+    final response = await Supabase.instance.client
+        .from('profiles')
+        .select('display_name')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    if (response == null) return null;
+    return response['display_name'] as String?;
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -149,13 +160,26 @@ class HomeDashboardTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Greeting
-          Text(
-            "Hello, Sagar 👋",
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
+          // ✅ Greeting dynamically fetched
+          FutureBuilder<String?>(
+            future: _fetchDisplayName(),
+            builder: (context, snapshot) {
+              String greeting;
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                greeting = "Hello 👋"; // temporary while loading
+              } else if (snapshot.hasError) {
+                greeting = "Hello 👋"; // fallback if error
+              } else {
+                greeting = "Hello, ${snapshot.data ?? 'User'} 👋";
+              }
+              return Text(
+                greeting,
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            },
           ),
           const SizedBox(height: 4),
           Text(
@@ -195,7 +219,7 @@ class HomeDashboardTab extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Options Grid -> switches tabs
+          // Options Grid
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),

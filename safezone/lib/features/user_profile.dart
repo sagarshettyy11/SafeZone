@@ -5,9 +5,26 @@ import 'package:safezone/settings/help_page.dart';
 import 'package:safezone/settings/invite_friend.dart';
 import 'package:safezone/settings/notification.dart';
 import 'package:safezone/settings/privacy_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
+
+  Future<Map<String, dynamic>?> getUserData() async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+
+    if (user == null) return null;
+
+    // Query the profiles table for the logged-in user
+    final response = await supabase
+        .from('profiles')
+        .select('username, user_bio')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    return response;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,114 +43,144 @@ class SettingsPage extends StatelessWidget {
           ),
         ),
       ),
-      body: ListView(
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search",
-                hintStyle: GoogleFonts.poppins(color: Colors.grey),
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                filled: true,
-                fillColor: Colors.grey[200],
-                contentPadding: const EdgeInsets.all(0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
+      body: FutureBuilder<Map<String, dynamic>?>(
+        future: getUserData(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+
+          final data = snapshot.data;
+          final username = data?['username'] ?? "Unknown User";
+          final bio = data?['user_bio'] ?? "No bio added";
+
+          return ListView(
+            children: [
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: "Search",
+                    hintStyle: GoogleFonts.poppins(color: Colors.grey),
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                    contentPadding: const EdgeInsets.all(0),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  style: GoogleFonts.poppins(color: Colors.black),
                 ),
               ),
-              style: GoogleFonts.poppins(color: Colors.black),
-            ),
-          ),
 
-          // User profile
-          ListTile(
-            leading: const CircleAvatar(
-              radius: 25,
-              backgroundColor: Colors.grey,
-              child: Icon(Icons.person, color: Colors.black, size: 30),
-            ),
-            title: Text(
-              "sagarshetty",
-              style: GoogleFonts.poppins(
-                color: Colors.black,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+              // User profile
+              ListTile(
+                leading: const CircleAvatar(
+                  radius: 25,
+                  backgroundColor: Colors.grey,
+                  child: Icon(Icons.person, color: Colors.black, size: 30),
+                ),
+                title: Text(
+                  username,
+                  style: GoogleFonts.poppins(
+                    color: Colors.black,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  bio,
+                  style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
+                ),
               ),
-            ),
-            subtitle: Text(
-              "Real Eyes, Realize, Real Lies",
-              style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
-            ),
-          ),
 
-          const Divider(color: Colors.grey),
+              const Divider(color: Colors.grey),
 
-          // Account item -> navigates to AccountPage
-          buildSettingsItem(
-            icon: Icons.key,
-            text: "Account",
-            context: context,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AccountPage()),
-              );
-            },
-          ),
+              // Account item
+              buildSettingsItem(
+                icon: Icons.key,
+                text: "Account",
+                context: context,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AccountPage(),
+                    ),
+                  );
+                },
+              ),
 
-          // Other items
-          buildSettingsItem(
-            icon: Icons.lock_outline,
-            text: "Privacy",
-            context: context,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const PrivacyPage()),
-              );
-            },
-          ),
-          buildSettingsItem(
-            icon: Icons.notifications_none,
-            text: "Notifications",
-            context: context,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationPage(),
-                ),
-              );
-            },
-          ),
-          buildSettingsItem(
-            icon: Icons.help_outline,
-            text: "Help",
-            context: context,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const HelpPage()),
-              );
-            },
-          ),
-          buildSettingsItem(
-            icon: Icons.group_add,
-            text: "Invite a Friend",
-            context: context,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const InviteFriendPage(),
-                ),
-              );
-            },
-          ),
-        ],
+              // Privacy
+              buildSettingsItem(
+                icon: Icons.lock_outline,
+                text: "Privacy",
+                context: context,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PrivacyPage(),
+                    ),
+                  );
+                },
+              ),
+
+              // Notifications
+              buildSettingsItem(
+                icon: Icons.notifications_none,
+                text: "Notifications",
+                context: context,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationPage(),
+                    ),
+                  );
+                },
+              ),
+
+              // Help
+              buildSettingsItem(
+                icon: Icons.help_outline,
+                text: "Help",
+                context: context,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HelpPage()),
+                  );
+                },
+              ),
+
+              // Invite a Friend
+              buildSettingsItem(
+                icon: Icons.group_add,
+                text: "Invite a Friend",
+                context: context,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const InviteFriendPage(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -159,7 +206,7 @@ class SettingsPage extends StatelessWidget {
         color: Colors.grey,
         size: 16,
       ),
-      onTap: onTap, // ✅ FIX: use the passed callback
+      onTap: onTap,
     );
   }
 }

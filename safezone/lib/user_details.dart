@@ -16,6 +16,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
   final phoneController = TextEditingController();
   final emergencyController = TextEditingController();
   final addressController = TextEditingController();
+  final bioController = TextEditingController(); // 👈 NEW
 
   bool _isLoading = false;
 
@@ -32,17 +33,15 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await Supabase.instance.client
-          .from('profiles') // ✅ just the table name
-          .upsert({
-            'id': user.id,
-            'display_name': displayNameController.text.trim(),
-            'username': usernameController.text.trim(),
-            'phone': phoneController.text.trim(),
-            'emergency_contact': emergencyController.text.trim(),
-            'address': addressController.text.trim(),
-          })
-          .select(); // ✅ return inserted/updated row for debugging
+      final response = await Supabase.instance.client.from('profiles').upsert({
+        'id': user.id, // 👈 uses auth.users UUID
+        'display_name': displayNameController.text.trim(),
+        'username': usernameController.text.trim(),
+        'phone': phoneController.text.trim(),
+        'emergency_contact': emergencyController.text.trim(),
+        'address': addressController.text.trim(),
+        'user_bio': bioController.text.trim(), // 👈 NEW
+      }).select();
 
       debugPrint("Supabase response: $response");
 
@@ -57,7 +56,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
         MaterialPageRoute(builder: (context) => const HomePage()),
       );
     } catch (error) {
-      debugPrint("Supabase error: $error"); // ✅ full log
+      debugPrint("Supabase error: $error");
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -127,6 +126,8 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                 ),
                 const SizedBox(height: 18),
                 _buildTextField("Address", addressController, maxLines: 2),
+                const SizedBox(height: 18),
+                _buildTextField("Bio", bioController, maxLines: 3), // 👈 NEW
 
                 const SizedBox(height: 24),
                 SizedBox(
