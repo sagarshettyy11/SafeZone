@@ -5,6 +5,7 @@ import 'package:safezone/settings/help_page.dart';
 import 'package:safezone/settings/invite_friend.dart';
 import 'package:safezone/settings/notification.dart';
 import 'package:safezone/settings/privacy_page.dart';
+import 'package:safezone/settings/edit_profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -16,12 +17,30 @@ class SettingsPage extends StatelessWidget {
 
     if (user == null) return null;
 
-    // Query the profiles table for the logged-in user
+    // Query the profiles table for logged-in user
     final response = await supabase
         .from('profiles')
-        .select('username, user_bio')
+        .select('username, user_bio, profile_image_url')
         .eq('id', user.id)
         .maybeSingle();
+
+    if (response == null) return null;
+
+    final imagePath = response['profile_image_url'] as String?;
+
+    if (imagePath != null && imagePath.isNotEmpty) {
+      // ✅ Handle both full URL and storage path cases
+      if (imagePath.startsWith('http')) {
+        response['profile_url'] = imagePath;
+      } else {
+        final imageUrl = supabase.storage
+            .from('profile-images')
+            .getPublicUrl(imagePath);
+        response['profile_url'] = imageUrl;
+      }
+    } else {
+      response['profile_url'] = null;
+    }
 
     return response;
   }
@@ -57,10 +76,11 @@ class SettingsPage extends StatelessWidget {
           final data = snapshot.data;
           final username = data?['username'] ?? "Unknown User";
           final bio = data?['user_bio'] ?? "No bio added";
+          final profileUrl = data?['profile_url'];
 
           return ListView(
             children: [
-              // Search bar
+              // 🔍 Search bar
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -83,12 +103,20 @@ class SettingsPage extends StatelessWidget {
                 ),
               ),
 
-              // User profile
+              // 👤 User profile tile
               ListTile(
-                leading: const CircleAvatar(
+                leading: CircleAvatar(
                   radius: 25,
-                  backgroundColor: Colors.grey,
-                  child: Icon(Icons.person, color: Colors.black, size: 30),
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: profileUrl != null
+                      ? NetworkImage(profileUrl)
+                      : null,
+                  child: profileUrl == null
+                      ? const Icon(Icons.person, color: Colors.black, size: 30)
+                      : null,
+                  onBackgroundImageError: (_, _) {
+                    debugPrint("❌ Failed to load profile image: $profileUrl");
+                  },
                 ),
                 title: Text(
                   username,
@@ -102,11 +130,19 @@ class SettingsPage extends StatelessWidget {
                   bio,
                   style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
                 ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EditProfilePage(),
+                    ),
+                  );
+                },
               ),
 
               const Divider(color: Colors.grey),
 
-              // Account item
+              // ⚙️ Settings items
               buildSettingsItem(
                 icon: Icons.key,
                 text: "Account",
@@ -120,8 +156,6 @@ class SettingsPage extends StatelessWidget {
                   );
                 },
               ),
-
-              // Privacy
               buildSettingsItem(
                 icon: Icons.lock_outline,
                 text: "Privacy",
@@ -135,8 +169,6 @@ class SettingsPage extends StatelessWidget {
                   );
                 },
               ),
-
-              // Notifications
               buildSettingsItem(
                 icon: Icons.notifications_none,
                 text: "Notifications",
@@ -150,8 +182,6 @@ class SettingsPage extends StatelessWidget {
                   );
                 },
               ),
-
-              // Help
               buildSettingsItem(
                 icon: Icons.help_outline,
                 text: "Help",
@@ -163,8 +193,6 @@ class SettingsPage extends StatelessWidget {
                   );
                 },
               ),
-
-              // Invite a Friend
               buildSettingsItem(
                 icon: Icons.group_add,
                 text: "Invite a Friend",

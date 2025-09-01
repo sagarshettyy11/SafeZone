@@ -45,6 +45,37 @@ class _HomePageState extends State<HomePage> {
     const SettingsPage(),
   ];
 
+  /// ✅ Fetch user profile image URL
+  Future<Map<String, dynamic>?> _fetchProfileData() async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+
+    if (user == null) return null;
+
+    final response = await supabase
+        .from('profiles')
+        .select('profile_image_url')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    if (response == null) return null;
+
+    final imagePath = response['profile_image_url'] as String?;
+
+    if (imagePath != null && imagePath.isNotEmpty) {
+      if (imagePath.startsWith('http')) {
+        response['profile_url'] = imagePath;
+      } else {
+        final imageUrl = supabase.storage
+            .from('profile-images')
+            .getPublicUrl(imagePath);
+        response['profile_url'] = imageUrl;
+      }
+    }
+
+    return response;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,10 +95,42 @@ class _HomePageState extends State<HomePage> {
                   iconSize: 32,
                   onPressed: () {},
                 ),
-                IconButton(
-                  icon: const Icon(Icons.account_circle),
-                  iconSize: 32,
-                  onPressed: () => _onItemTapped(4),
+                FutureBuilder<Map<String, dynamic>?>(
+                  future: _fetchProfileData(),
+                  builder: (context, snapshot) {
+                    String? profileUrl;
+
+                    if (snapshot.connectionState == ConnectionState.done &&
+                        snapshot.data != null) {
+                      profileUrl = snapshot.data!['profile_url'];
+                    }
+
+                    return GestureDetector(
+                      onTap: () => _onItemTapped(4), // jump to Profile tab
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage: profileUrl != null
+                              ? NetworkImage(profileUrl)
+                              : null,
+                          child: profileUrl == null
+                              ? const Icon(
+                                  Icons.person,
+                                  color: Colors.black,
+                                  size: 18,
+                                )
+                              : null,
+                          onBackgroundImageError: (_, _) {
+                            debugPrint(
+                              "❌ Failed to load profile image: $profileUrl",
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             )

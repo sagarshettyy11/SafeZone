@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:developer' as developer;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:developer' as developer;
 
 class ComplaintPage extends StatefulWidget {
   const ComplaintPage({super.key});
@@ -22,6 +23,66 @@ class ComplaintPageState extends State<ComplaintPage> {
     {"icon": Icons.cloud, "label": "Hazard"},
     {"icon": Icons.more_horiz, "label": "Other"},
   ];
+
+  bool _loading = false;
+
+  Future<void> _submitComplaint() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("You must be logged in to submit.")),
+      );
+      return;
+    }
+
+    if (selectedCategory.isEmpty || descriptionController.text.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all required fields.")),
+      );
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      final response = await Supabase.instance.client.from('complaints').insert(
+        {
+          'user_id': user.id,
+          'category': selectedCategory,
+          'description': descriptionController.text,
+          'urgency': urgency.toInt(),
+          'latitude': null, // replace with actual location if available
+          'longitude': null, // replace with actual location if available
+          'media_url': null, // replace with uploaded file path if available
+        },
+      );
+
+      developer.log("Insert response: $response");
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Complaint submitted successfully!")),
+      );
+
+      setState(() {
+        selectedCategory = "";
+        urgency = 2;
+        descriptionController.clear();
+      });
+    } catch (e, st) {
+      developer.log("Error inserting complaint", error: e, stackTrace: st);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to submit complaint: $e")));
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +190,8 @@ class ComplaintPageState extends State<ComplaintPage> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
+
             // Description
             TextField(
               controller: descriptionController,
@@ -197,27 +259,9 @@ class ComplaintPageState extends State<ComplaintPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "Low",
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  "Medium",
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  "High",
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text("Low", style: GoogleFonts.poppins(fontSize: 16)),
+                Text("Medium", style: GoogleFonts.poppins(fontSize: 16)),
+                Text("High", style: GoogleFonts.poppins(fontSize: 16)),
               ],
             ),
             const SizedBox(height: 20),
@@ -227,22 +271,20 @@ class ComplaintPageState extends State<ComplaintPage> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF1E4DE8),
+                  backgroundColor: const Color(0xFF1E4DE8),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                onPressed: () {
-                  developer.log("Category: $selectedCategory");
-                  developer.log("Description: ${descriptionController.text}");
-                  developer.log("Urgency: $urgency");
-                },
-                child: Text(
-                  "Submit Complaint",
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
+                onPressed: _loading ? null : _submitComplaint,
+                child: _loading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        "Submit Complaint",
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
           ],
