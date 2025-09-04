@@ -151,6 +151,10 @@ class _LoginPageState extends State<LoginPage> {
                 TextField(
                   controller: passwordController,
                   obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (value) {
+                    _login();
+                  },
                   decoration: InputDecoration(
                     labelText: 'Password',
                     labelStyle: GoogleFonts.poppins(
