@@ -97,15 +97,39 @@ class _AccountPageState extends State<AccountPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Change Email"),
-        content: TextField(
-          controller: emailController,
-          decoration: const InputDecoration(hintText: "Enter new email"),
+        title: Text(
+          "Change Email",
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
+        ),
+        content: SizedBox(
+          width: 300,
+          height: 60,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300, width: 1.2),
+            ),
+            child: TextField(
+              controller: emailController,
+              style: GoogleFonts.poppins(fontSize: 18, color: Colors.black),
+              decoration: InputDecoration(
+                hintText: "Enter new email",
+                hintStyle: GoogleFonts.poppins(color: Colors.grey, fontSize: 16),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text("Cancel", style: GoogleFonts.poppins(fontSize: 14)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -129,7 +153,7 @@ class _AccountPageState extends State<AccountPage> {
                 ).showSnackBar(SnackBar(content: Text("Error: $e")));
               }
             },
-            child: const Text("Save"),
+            child: Text("Save", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -144,11 +168,33 @@ class _AccountPageState extends State<AccountPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text("Update ${fieldName.replaceAll("_", " ")}"),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: "Enter new ${fieldName.replaceAll("_", " ")}",
+        title: Text(
+          "Update ${fieldName.replaceAll("_", " ")}",
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
+        ),
+        content: SizedBox(
+          width: 300,
+          height: 60,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300, width: 1.2),
+            ),
+            child: TextField(
+              controller: controller,
+              style: GoogleFonts.poppins(fontSize: 18, color: Colors.black),
+              decoration: InputDecoration(
+                hintText: "Enter new ${fieldName.replaceAll("_", " ")}",
+                hintStyle: GoogleFonts.poppins(color: Colors.grey, fontSize: 16),
+                border: InputBorder.none,
+              ),
+            ),
           ),
         ),
         actions: [

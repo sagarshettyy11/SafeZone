@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:safezone/features/home_page.dart';
+import 'safe_danger_map_page.dart'; 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatefulWidget {
@@ -13,7 +14,16 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // LOGIN FUNCTION
+  @override
+  void dispose() {
+    // ✅ Securely clear and dispose controllers to avoid memory leaks
+    emailController.clear();
+    passwordController.clear();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _login() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
@@ -34,7 +44,6 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response.user != null) {
         if (!mounted) return;
-        // Redirect to Dashboard after login success
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomePage()),
@@ -47,13 +56,23 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       if (!mounted) return;
+
+      String message = 'Something went wrong. Please try again.';
+      final errorString = e.toString();
+
+      if (errorString.contains('Invalid login credentials')) {
+        message = 'Incorrect email or password. Please try again.';
+      } else if (errorString.contains('Network')) {
+        message = 'Network error. Please check your internet connection.';
+      }
+
+      debugPrint('Login error: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
-  // PASSWORD RESET
   Future<void> _resetPassword() async {
     final email = emailController.text.trim();
 
@@ -68,8 +87,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await Supabase.instance.client.auth.resetPasswordForEmail(
         email,
-        redirectTo:
-            'https://your-app.com/reset-callback', // Configure in Supabase dashboard
+        redirectTo: 'https://your-app.com/reset-callback',
       );
 
       if (!mounted) return;
@@ -78,9 +96,21 @@ class _LoginPageState extends State<LoginPage> {
       );
     } catch (e) {
       if (!mounted) return;
+
+      String message =
+          'Unable to send password reset email. Please try again later.';
+      final errorString = e.toString();
+
+      if (errorString.contains('Invalid email')) {
+        message = 'Please enter a valid email address.';
+      } else if (errorString.contains('Network')) {
+        message = 'Network error. Please check your internet connection.';
+      }
+
+      debugPrint('Password reset error: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -110,9 +140,9 @@ class _LoginPageState extends State<LoginPage> {
                 Text(
                   "Login here",
                   style: GoogleFonts.poppins(
-                    fontSize: 26,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E4DE8),
+                    color: const Color(0xFF1E4DE8),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -126,55 +156,74 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 32),
+
+                // Email field
                 TextField(
                   controller: emailController,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Email',
                     labelStyle: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Colors.grey[700],
                     ),
                     filled: true,
-                    fillColor: Color(0xFFE8EAFA),
+                    fillColor: const Color(0xFFE8EAFA),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                      borderSide: const BorderSide(
+                        color: Colors.blue,
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 18),
+
+                // Password field
                 TextField(
                   controller: passwordController,
                   obscureText: true,
                   textInputAction: TextInputAction.done,
-                  onSubmitted: (value) {
-                    _login();
-                  },
+                  onSubmitted: (value) => _login(),
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Password',
                     labelStyle: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Colors.grey[700],
                     ),
                     filled: true,
-                    fillColor: Color(0xFFE8EAFA),
+                    fillColor: const Color(0xFFE8EAFA),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                      borderSide: const BorderSide(
+                        color: Colors.blue,
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
+
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -190,12 +239,14 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
+
+                // Sign in button
                 SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF1E4DE8),
+                      backgroundColor: const Color(0xFF1E4DE8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -212,11 +263,13 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 GestureDetector(
                   onTap: () => Navigator.pushNamed(context, '/register'),
                   child: Text(
                     "Create new account",
                     style: GoogleFonts.poppins(
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.blue,
                     ),
@@ -226,6 +279,7 @@ class _LoginPageState extends State<LoginPage> {
                 Text(
                   "Or continue with",
                   style: GoogleFonts.poppins(
+                    fontSize: 14,
                     fontWeight: FontWeight.w400,
                     color: Colors.black54,
                   ),

@@ -117,7 +117,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   decoration: InputDecoration(
                     labelText: 'Email',
                     labelStyle: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Colors.grey[700],
                     ),
@@ -134,6 +134,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                         width: 2,
                       ),
                     ),
+                  ),
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -145,7 +150,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   decoration: InputDecoration(
                     labelText: 'Password',
                     labelStyle: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Colors.grey[700],
                     ),
@@ -163,6 +168,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                       ),
                     ),
                   ),
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
+                  ),
                 ),
                 const SizedBox(height: 18),
 
@@ -173,7 +183,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
                     labelStyle: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Colors.grey[700],
                     ),
@@ -190,6 +200,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                         width: 2,
                       ),
                     ),
+                  ),
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
                   ),
                 ),
                 const SizedBox(height: 18),
