@@ -112,21 +112,23 @@ class _HomePageState extends State<HomePage> {
                         child: CircleAvatar(
                           radius: 16,
                           backgroundColor: Colors.grey[300],
-                          backgroundImage: profileUrl != null
+                          backgroundImage:
+                              (profileUrl != null && profileUrl.isNotEmpty)
                               ? NetworkImage(profileUrl)
                               : null,
-                          child: profileUrl == null
+                          onBackgroundImageError: (_, _) {
+                            // Fallback to default icon if image fails
+                            setState(() {
+                              profileUrl = null;
+                            });
+                          },
+                          child: (profileUrl == null || profileUrl.isEmpty)
                               ? const Icon(
                                   Icons.person,
                                   color: Colors.black,
                                   size: 18,
                                 )
                               : null,
-                          onBackgroundImageError: (_, _) {
-                            debugPrint(
-                              "❌ Failed to load profile image: $profileUrl",
-                            );
-                          },
                         ),
                       ),
                     );

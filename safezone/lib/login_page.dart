@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:safezone/features/home_page.dart';
-import 'safe_danger_map_page.dart'; 
+import 'package:safezone/admin_dashboard.dart'; // ✅ Make sure you create this file/page
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatefulWidget {
@@ -14,9 +14,12 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  // ✅ Hardcoded admin credentials
+  final String adminEmail = "admin@safezone.com";
+  final String adminPassword = "admin123";
+
   @override
   void dispose() {
-    // ✅ Securely clear and dispose controllers to avoid memory leaks
     emailController.clear();
     passwordController.clear();
     emailController.dispose();
@@ -36,7 +39,18 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    // ✅ First check for admin login
+    if (email == adminEmail && password == adminPassword) {
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const AdminDashboard()),
+      );
+      return;
+    }
+
     try {
+      // ✅ Normal user login with Supabase
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: password,

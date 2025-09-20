@@ -76,7 +76,7 @@ class SettingsPage extends StatelessWidget {
           final data = snapshot.data;
           final username = data?['username'] ?? "Unknown User";
           final bio = data?['user_bio'] ?? "No bio added";
-          final profileUrl = data?['profile_url'];
+          final String? profileUrl = data?['profile_url'];
 
           return ListView(
             children: [
@@ -111,13 +111,18 @@ class SettingsPage extends StatelessWidget {
                   backgroundImage: profileUrl != null
                       ? NetworkImage(profileUrl)
                       : null,
+                  onBackgroundImageError: profileUrl != null
+                      ? (_, _) {
+                          debugPrint(
+                            "❌ Failed to load profile image: $profileUrl",
+                          );
+                        }
+                      : null,
                   child: profileUrl == null
                       ? const Icon(Icons.person, color: Colors.black, size: 30)
                       : null,
-                  onBackgroundImageError: (_, _) {
-                    debugPrint("❌ Failed to load profile image: $profileUrl");
-                  },
                 ),
+
                 title: Text(
                   username,
                   style: GoogleFonts.poppins(

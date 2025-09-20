@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:safezone/user_details.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:safezone/user_details.dart';
+import 'package:logger/logger.dart';
+
+final logger = Logger(); // For debug/logging
 
 class CreateAccountPage extends StatefulWidget {
   const CreateAccountPage({super.key});
@@ -14,6 +18,18 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+
+  // Request necessary permissions
+  Future<void> _requestPermissions() async {
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.location,
+      Permission.sms,
+      Permission.phone,
+      Permission.storage,
+    ].request();
+
+    logger.i("Permission statuses: $statuses");
+  }
 
   Future<void> _signUp() async {
     final email = emailController.text.trim();
@@ -40,19 +56,25 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       final response = await Supabase.instance.client.auth.signUp(
         email: email,
         password: password,
-        // 👇 Optional: stops redirect for email verification
-        // emailRedirectTo: null,
       );
 
       if (response.user != null) {
+        // Request permissions immediately
+        await _requestPermissions();
+
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account created successfully!')),
+          const SnackBar(
+            content: Text(
+              'Account created successfully! Permissions requested.',
+            ),
+          ),
         );
-        // 🚀 Go to User Details Page after signup
+
+        // Navigate to User Details Page
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => UserDetailsPage()),
+          MaterialPageRoute(builder: (context) => const UserDetailsPage()),
         );
       } else {
         if (!mounted) return;
@@ -244,44 +266,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // Social Login Section
-                Text(
-                  "Or continue with",
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _socialIcon(Icons.g_mobiledata_outlined),
-                    const SizedBox(width: 16),
-                    _socialIcon(Icons.facebook),
-                    const SizedBox(width: 16),
-                    _socialIcon(Icons.apple),
-                  ],
-                ),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  static Widget _socialIcon(IconData icon) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, size: 28, color: Colors.black87),
     );
   }
 }

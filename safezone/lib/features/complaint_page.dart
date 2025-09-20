@@ -56,6 +56,7 @@ class ComplaintPageState extends State<ComplaintPage> {
           'latitude': null, // replace with actual location if available
           'longitude': null, // replace with actual location if available
           'media_url': null, // replace with uploaded file path if available
+          'status': 'pending',
         },
       );
 

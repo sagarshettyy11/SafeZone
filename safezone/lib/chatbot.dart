@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// ------------------------------
@@ -226,7 +227,17 @@ Context city: $kDefaultCity.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('SafeZone Chatbot')),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text(
+          'SafeZone Chatbot',
+          style: GoogleFonts.poppins(
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF1E4DE8),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -270,7 +281,19 @@ Context city: $kDefaultCity.
                         ),
                         child: Text(
                           m.text,
-                          style: const TextStyle(fontSize: 15),
+                          style: m.fromBot
+                              ? GoogleFonts.poppins(
+                                  // font for bot messages
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                )
+                              : GoogleFonts.roboto(
+                                  // font for user messages (optional)
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.normal,
+                                  color: Colors.black,
+                                ),
                         ),
                       ),
                     ],
