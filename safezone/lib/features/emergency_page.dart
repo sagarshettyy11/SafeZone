@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:telephony/telephony.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:another_telephony/telephony.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:logger/logger.dart';
 
-final telephony = Telephony.instance;
+final telephony = Telephony.instance; // ✅ Updated
 final logger = Logger();
 
 class EmergencyPage extends StatefulWidget {
@@ -28,6 +28,7 @@ class _EmergencyPageState extends State<EmergencyPage> {
   Future<void> _requestPermissions() async {
     await Permission.location.request();
     await Permission.sms.request();
+    await Permission.phone.request();
   }
 
   // Get current location
@@ -69,9 +70,13 @@ class _EmergencyPageState extends State<EmergencyPage> {
     return profile?['emergency_contact'] as String?;
   }
 
-  // Send SMS
+  // Send SMS using another_telephony
   Future<void> _sendSMS(String number, String message) async {
-    await telephony.sendSms(to: number, message: message);
+    await telephony.sendSms(
+      to: number,
+      message: message,
+      isMultipart: true, // ✅ recommended for longer messages
+    );
     logger.i("SMS sent to $number");
   }
 
@@ -140,12 +145,7 @@ class _EmergencyPageState extends State<EmergencyPage> {
           onTap: () => _makeCall(number),
           child: CircleAvatar(
             radius: 35,
-            backgroundColor: const Color.fromRGBO(
-              255,
-              0,
-              0,
-              1,
-            ), // replace with fromRGBO
+            backgroundColor: const Color.fromRGBO(255, 0, 0, 1),
             child: Icon(icon, color: Colors.white, size: 30),
           ),
         ),

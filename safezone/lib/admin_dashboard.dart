@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logger/logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await dotenv.load(fileName: ".env");
+
   await Supabase.initialize(
-    url:
-        'https://your-project.supabase.co', // <-- Replace with your Supabase URL
-    anonKey: 'your-anon-key', // <-- Replace with your anon key
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
   runApp(const MyApp());
 }
 
-final logger = Logger(); // Logger for production-safe logging
+final logger = Logger();
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -49,13 +51,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<List<Map<String, dynamic>>> _fetchComplaints() async {
     try {
       final response = await supabase
-          .from('complaints')
-          .select(
-            'id, category, description, urgency, media_url, status, profiles(username)',
-          )
+          .from('complaints_with_profiles') // Query the view
+          .select()
           .order('id', ascending: false);
 
-      // Convert response to List<Map<String, dynamic>>
       final list = List<Map<String, dynamic>>.from(response);
       logger.i("Fetched ${list.length} complaints");
       return list;
@@ -72,7 +71,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
           .update({'status': status})
           .eq('id', complaintId);
 
-      // Refresh complaints list
       setState(() {
         _complaintsFuture = _fetchComplaints();
       });
@@ -113,7 +111,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               final description = complaint['description'] ?? '';
               final urgency = complaint['urgency']?.toString() ?? '';
               final mediaUrl = complaint['media_url'] ?? '';
-              final username = complaint['profiles']?['username'] ?? 'Unknown';
+              final username = complaint['profile_username'] ?? 'Unknown';
               final status = complaint['status'] ?? 'pending';
 
               return Card(
