@@ -7,7 +7,7 @@ import 'package:another_telephony/telephony.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:logger/logger.dart';
 
-final telephony = Telephony.instance; // ✅ Updated
+final telephony = Telephony.instance;
 final logger = Logger();
 
 class EmergencyPage extends StatefulWidget {
@@ -24,14 +24,12 @@ class _EmergencyPageState extends State<EmergencyPage> {
   final String ambulanceNumber = "108";
   final String fireNumber = "101";
 
-  // Request necessary permissions
   Future<void> _requestPermissions() async {
     await Permission.location.request();
     await Permission.sms.request();
     await Permission.phone.request();
   }
 
-  // Get current location
   Future<Position> _getCurrentLocation() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       throw "Location services are disabled";
@@ -45,7 +43,6 @@ class _EmergencyPageState extends State<EmergencyPage> {
       }
     }
 
-    // Modern LocationSettings usage
     LocationSettings locationSettings = const LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 10,
@@ -56,9 +53,9 @@ class _EmergencyPageState extends State<EmergencyPage> {
     );
   }
 
-  // Fetch emergency contact from Supabase
   Future<String?> _getEmergencyContact() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
+    logger.i("Logged-in user ID: $userId");
     if (userId == null) return null;
 
     final profile = await Supabase.instance.client
@@ -67,23 +64,20 @@ class _EmergencyPageState extends State<EmergencyPage> {
         .eq('id', userId)
         .maybeSingle();
 
+    logger.i("Fetched profile: $profile");
     return profile?['emergency_contact'] as String?;
   }
 
-  // Send SMS using another_telephony
   Future<void> _sendSMS(String number, String message) async {
-    await telephony.sendSms(
-      to: number,
-      message: message,
-      isMultipart: true, // ✅ recommended for longer messages
-    );
+    await telephony.sendSms(to: number, message: message, isMultipart: true);
     logger.i("SMS sent to $number");
   }
 
-  // Open WhatsApp
   Future<void> _sendWhatsApp(String number, String message) async {
+    String formattedNumber = number.startsWith("+91") ? number : "+91$number";
+
     final url = Uri.parse(
-      "https://wa.me/$number?text=${Uri.encodeFull(message)}",
+      "https://wa.me/$formattedNumber?text=${Uri.encodeFull(message)}",
     );
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -92,7 +86,6 @@ class _EmergencyPageState extends State<EmergencyPage> {
     }
   }
 
-  // Handle SOS
   Future<void> _handleSOS() async {
     setState(() => _isSending = true);
     try {
@@ -111,8 +104,37 @@ class _EmergencyPageState extends State<EmergencyPage> {
       final message =
           "⚠️ I'm in emergency! My location: https://www.google.com/maps?q=${position.latitude},${position.longitude}";
 
+      // Send SMS & WhatsApp
       await _sendSMS(contact, message);
       await _sendWhatsApp(contact, message);
+
+      // ✅ Check if emergency contact is registered
+      final targetUser = await Supabase.instance.client
+          .from('profiles')
+          .select('id')
+          .eq('phone_number', contact)
+          .maybeSingle();
+
+      if (targetUser != null) {
+        final targetId = targetUser['id'];
+        logger.i("Emergency contact $contact is registered with ID $targetId");
+
+        // ✅ Insert in-app alert in Supabase
+        await Supabase.instance.client.from('alerts').insert({
+          'sender_id': Supabase.instance.client.auth.currentUser?.id,
+          'receiver_id': targetId,
+          'message': message,
+          'timestamp': DateTime.now().toIso8601String(),
+          'seen': false,
+        });
+
+        // Optional: show immediate popup in-app
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("In-app alert sent to contact!")),
+          );
+        }
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -172,7 +194,6 @@ class _EmergencyPageState extends State<EmergencyPage> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // SOS Button
           Center(
             child: GestureDetector(
               onTap: _isSending ? null : _handleSOS,
@@ -208,8 +229,6 @@ class _EmergencyPageState extends State<EmergencyPage> {
             ),
           ),
           const SizedBox(height: 40),
-
-          // Quick action buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -226,10 +245,7 @@ class _EmergencyPageState extends State<EmergencyPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 40),
-
-          // Placeholder Share Location
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
