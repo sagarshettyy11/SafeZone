@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "770738876268",
+    "project_id": "safezone-ajiet",
+    "storage_bucket": "safezone-ajiet.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:770738876268:android:88ff731a5c5ba355cb0d49",
+        "android_client_info": {
+          "package_name": "com.example.safezone"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "770738876268-u0oj2e8jcplo17qbcs7qc1n846lr390u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6kdG2OQDD8QYyW8WOF_jG6IRNtTvkjHk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "770738876268-u0oj2e8jcplo17qbcs7qc1n846lr390u.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
