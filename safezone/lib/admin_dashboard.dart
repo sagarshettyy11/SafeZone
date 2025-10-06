@@ -51,8 +51,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<List<Map<String, dynamic>>> _fetchComplaints() async {
     try {
       final response = await supabase
-          .from('complaints_with_profiles') // Query the view
+          .from('complaints') // Query the view
           .select()
+          .eq('status', 'pending') // fetch only pending complaints
           .order('id', ascending: false);
 
       final list = List<Map<String, dynamic>>.from(response);

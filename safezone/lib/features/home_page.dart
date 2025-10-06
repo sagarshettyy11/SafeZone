@@ -233,7 +233,7 @@ class HomeDashboardTab extends StatelessWidget {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 greeting = "Hello 👋"; // temporary while loading
               } else if (snapshot.hasError) {
-                greeting = "Hello 👋"; // fallback if error
+                greeting = "Hello 👋"; // fallback if errorgit a
               } else {
                 greeting = "Hello, ${snapshot.data ?? 'User'} 👋";
               }

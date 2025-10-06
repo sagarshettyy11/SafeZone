@@ -6,6 +6,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 const String googleApiKey = "YOUR_API_KEY"; // replace with your Google API key
 
@@ -17,6 +19,8 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
+  final supabase = Supabase.instance.client;
+  final logger = Logger();
   final Completer<GoogleMapController> _controller = Completer();
   static const LatLng _start = LatLng(28.6139, 77.2090); // New Delhi default
 
@@ -25,6 +29,14 @@ class _MapPageState extends State<MapPage> {
 
   LatLng? origin;
   LatLng? destination;
+
+  @override
+  initState() {
+    super.initState();
+    //_goToMyLocation();
+
+    _fetchComplaints();
+  }
 
   // ----------------------------
   // My location
@@ -52,15 +64,58 @@ class _MapPageState extends State<MapPage> {
     final controller = await _controller.future;
     controller.animateCamera(CameraUpdate.newLatLngZoom(latLng, 14));
     if (!mounted) return;
-    setState(() {
-      markers.add(
-        Marker(
-          markerId: const MarkerId("me"),
-          position: latLng,
-          infoWindow: const InfoWindow(title: "My Location"),
-        ),
-      );
-    });
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchComplaints() async {
+    try {
+      final response = await supabase
+          .from('complaints')
+          .select('*')
+          .eq('status', 'approved')
+          .order('id', ascending: false);
+
+      final list = List<Map<String, dynamic>>.from(response);
+
+      if (!mounted) return [];
+
+      setState(() {
+        markers.clear(); // ✅ Clear old markers to avoid duplicates
+        for (var data in list) {
+          final lat = data['latitude'] ?? 0.0;
+          final long = data['longitude'] ?? 0.0;
+          final latLng = LatLng(lat, long);
+
+          markers.add(
+            Marker(
+              markerId: MarkerId(data['id'].toString()), // ✅ unique ID
+              position: latLng,
+              infoWindow: InfoWindow(
+                title: data['title'] ?? "Unsafe Spot",
+                snippet: data['description'] ?? "",
+              ),
+            ),
+          );
+        }
+      });
+
+      // ✅ Center map on first location
+      if (list.isNotEmpty) {
+        final first = list.first;
+        final controller = await _controller.future;
+        controller.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(first['latitude'], first['longitude']),
+            12,
+          ),
+        );
+      }
+
+      logger.i("Fetched ${markers.length} markers");
+      return list;
+    } catch (e) {
+      logger.e("Error fetching complaints: $e");
+      return [];
+    }
   }
 
   // ----------------------------
@@ -286,7 +341,10 @@ class _MapPageState extends State<MapPage> {
         ],
       ),
       body: GoogleMap(
-        onMapCreated: (controller) => _controller.complete(controller),
+        onMapCreated: (controller) async {
+          _controller.complete(controller);
+          await _goToMyLocation(); // ✅ Move to user location immediately
+        },
         initialCameraPosition: const CameraPosition(target: _start, zoom: 11),
         markers: markers,
         polylines: polylines,
