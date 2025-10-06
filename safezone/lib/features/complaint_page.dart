@@ -1,8 +1,74 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:developer' as developer;
 
+// Map Picker Page
+class MapPickerPage extends StatefulWidget {
+  final double? initialLat;
+  final double? initialLng;
+
+  const MapPickerPage({super.key, this.initialLat, this.initialLng});
+
+  @override
+  State<MapPickerPage> createState() => _MapPickerPageState();
+}
+
+class _MapPickerPageState extends State<MapPickerPage> {
+  LatLng? pickedLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialLat != null && widget.initialLng != null) {
+      pickedLocation = LatLng(widget.initialLat!, widget.initialLng!);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Pick Location"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check),
+            onPressed: pickedLocation == null
+                ? null
+                : () {
+                    Navigator.of(context).pop(pickedLocation);
+                  },
+          ),
+        ],
+      ),
+      body: GoogleMap(
+        initialCameraPosition: CameraPosition(
+          target: pickedLocation ?? const LatLng(20.5937, 78.9629),
+          zoom: pickedLocation != null ? 15 : 5,
+        ),
+        onTap: (latLng) {
+          setState(() {
+            pickedLocation = latLng;
+          });
+        },
+        markers: pickedLocation == null
+            ? {}
+            : {
+                Marker(
+                  markerId: const MarkerId('picked'),
+                  position: pickedLocation!,
+                )
+              },
+      ),
+    );
+  }
+}
+
+// Complaint Page
 class ComplaintPage extends StatefulWidget {
   const ComplaintPage({super.key});
 
@@ -12,8 +78,13 @@ class ComplaintPage extends StatefulWidget {
 
 class ComplaintPageState extends State<ComplaintPage> {
   String selectedCategory = "";
-  double urgency = 2; // 1 = Low, 2 = Medium, 3 = High
+  double urgency = 2;
   TextEditingController descriptionController = TextEditingController();
+  TextEditingController proofLinkController = TextEditingController();
+
+  double? latitude;
+  double? longitude;
+  String? mediaPath;
 
   final List<Map<String, dynamic>> categories = [
     {"icon": Icons.warning, "label": "Crime"},
@@ -26,6 +97,152 @@ class ComplaintPageState extends State<ComplaintPage> {
 
   bool _loading = false;
 
+  // Pick media from gallery
+  Future<void> _pickMedia() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (!mounted) return;
+
+    if (pickedFile != null) {
+      setState(() {
+        mediaPath = pickedFile.path;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Media selected successfully")),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("No media selected")),
+        );
+      }
+    }
+  }
+
+  // Upload image to Supabase Storage (complaint_media bucket)
+  Future<String?> _uploadImageToSupabase(String filePath) async {
+    try {
+      final file = File(filePath);
+      final fileName =
+          'complaints/${DateTime.now().millisecondsSinceEpoch}_${file.path.split("/").last}';
+
+      await Supabase.instance.client.storage
+          .from('complaint_media') // updated bucket name
+          .uploadBinary(fileName, await file.readAsBytes());
+
+      final publicUrl = Supabase.instance.client.storage
+          .from('complaint_media')
+          .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error uploading image: $e")),
+        );
+      }
+      return null;
+    }
+  }
+
+  // Get current location
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Location services are disabled.")),
+        );
+      }
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Location permission denied.")),
+          );
+        }
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content:
+                  Text("Location permissions are permanently denied.")),
+        );
+      }
+      return;
+    }
+
+    try {
+      final locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.high,
+      );
+
+      final position =
+          await Geolocator.getCurrentPosition(locationSettings: locationSettings);
+
+      if (!mounted) return;
+
+      setState(() {
+        latitude = position.latitude;
+        longitude = position.longitude;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Using current location")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to get location: $e")),
+        );
+      }
+    }
+  }
+
+  // Pick location from map
+  Future<void> _pickLocationOnMap() async {
+    if (!mounted) return;
+
+    final selected = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapPickerPage(
+          initialLat: latitude,
+          initialLng: longitude,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (selected != null) {
+      setState(() {
+        latitude = selected.latitude;
+        longitude = selected.longitude;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Location selected from map")),
+        );
+      }
+    }
+  }
+
+  // Submit complaint
   Future<void> _submitComplaint() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
@@ -44,25 +261,38 @@ class ComplaintPageState extends State<ComplaintPage> {
       return;
     }
 
+    if (latitude == null || longitude == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a location.")),
+      );
+      return;
+    }
+
     setState(() => _loading = true);
 
     try {
-      final response = await Supabase.instance.client.from('complaints').insert(
-        {
-          'user_id': user.id,
-          'category': selectedCategory,
-          'description': descriptionController.text,
-          'urgency': urgency.toInt(),
-          'latitude': null, // replace with actual location if available
-          'longitude': null, // replace with actual location if available
-          'media_url': null, // replace with uploaded file path if available
-          'status': 'pending',
-        },
-      );
+      String? uploadedUrl;
+      if (mediaPath != null) {
+        uploadedUrl = await _uploadImageToSupabase(mediaPath!);
+      }
+
+      final response = await Supabase.instance.client.from('complaints').insert({
+        'user_id': user.id,
+        'category': selectedCategory,
+        'description': descriptionController.text,
+        'urgency': urgency.toInt(),
+        'latitude': latitude,
+        'longitude': longitude,
+        'media_url': uploadedUrl,
+        'proof_link': proofLinkController.text,
+        'status': 'pending',
+      });
 
       developer.log("Insert response: $response");
 
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Complaint submitted successfully!")),
       );
@@ -71,13 +301,19 @@ class ComplaintPageState extends State<ComplaintPage> {
         selectedCategory = "";
         urgency = 2;
         descriptionController.clear();
+        proofLinkController.clear();
+        mediaPath = null;
+        latitude = null;
+        longitude = null;
       });
     } catch (e, st) {
       developer.log("Error inserting complaint", error: e, stackTrace: st);
+
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Failed to submit complaint: $e")));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to submit complaint: $e")),
+      );
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -106,7 +342,7 @@ class ComplaintPageState extends State<ComplaintPage> {
             ),
             const SizedBox(height: 20),
 
-            // Category Selection
+            // Category selection
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -143,9 +379,7 @@ class ComplaintPageState extends State<ComplaintPage> {
                         Text(
                           category["label"],
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
+                              fontSize: 14, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -155,91 +389,79 @@ class ComplaintPageState extends State<ComplaintPage> {
             ),
             const SizedBox(height: 20),
 
-            // Location Section
+            // Location section
             Text(
               "Location",
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _getCurrentLocation,
+                  icon: const Icon(Icons.my_location),
+                  label: const Text("Current location"),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton.icon(
+                  onPressed: _pickLocationOnMap,
+                  icon: const Icon(Icons.map),
+                  label: const Text("Pick location"),
+                ),
+              ],
+            ),
+            if (latitude != null && longitude != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
-                  "Map / Location Picker",
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  "Selected Location: ($latitude, $longitude)",
+                  style: const TextStyle(color: Colors.green),
                 ),
               ),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.my_location),
-              label: Text(
-                "Use current location",
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
             const SizedBox(height: 20),
 
             // Description
             TextField(
               controller: descriptionController,
               maxLines: 3,
-              decoration: InputDecoration(
-                hintText: "Describe what happened..",
-                hintStyle: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-                border: const OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(
+                  hintText: "Describe what happened..",
+                  border: OutlineInputBorder()),
             ),
             const SizedBox(height: 20),
 
-            // Media upload placeholder
+            // Media upload
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   "Add photo/video (optional)",
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-                ElevatedButton(
-                  onPressed: () {},
-                  child: Text(
-                    "Add",
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                ElevatedButton(onPressed: _pickMedia, child: const Text("Add")),
               ],
+            ),
+            if (mediaPath != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  "Selected: $mediaPath",
+                  style: const TextStyle(color: Colors.green),
+                ),
+              ),
+            const SizedBox(height: 10),
+
+            // Proof link
+            TextField(
+              controller: proofLinkController,
+              decoration: const InputDecoration(
+                  labelText: "Proof Link (optional)", border: OutlineInputBorder()),
             ),
             const SizedBox(height: 20),
 
             // Urgency slider
             Text(
               "Urgency",
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
             ),
             Slider(
               value: urgency,
@@ -249,21 +471,9 @@ class ComplaintPageState extends State<ComplaintPage> {
               label: urgency == 1
                   ? "Low"
                   : urgency == 2
-                  ? "Medium"
-                  : "High",
-              onChanged: (val) {
-                setState(() {
-                  urgency = val;
-                });
-              },
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Low", style: GoogleFonts.poppins(fontSize: 16)),
-                Text("Medium", style: GoogleFonts.poppins(fontSize: 16)),
-                Text("High", style: GoogleFonts.poppins(fontSize: 16)),
-              ],
+                      ? "Medium"
+                      : "High",
+              onChanged: (val) => setState(() => urgency = val),
             ),
             const SizedBox(height: 20),
 
@@ -271,21 +481,16 @@ class ComplaintPageState extends State<ComplaintPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E4DE8),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
                 onPressed: _loading ? null : _submitComplaint,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E4DE8), // Change to your desired color
+                  foregroundColor: Colors.white, // Text color
+                  padding: const EdgeInsets.symmetric(vertical: 16), // Optional
+                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
                 child: _loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        "Submit Complaint",
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
+                    ? const CircularProgressIndicator(color: Color(0xFF1E4DE8))
+                    : Text("Submit Complaint"),
               ),
             ),
           ],
