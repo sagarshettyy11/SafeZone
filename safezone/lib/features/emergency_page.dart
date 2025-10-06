@@ -74,17 +74,23 @@ class _EmergencyPageState extends State<EmergencyPage> {
   }
 
   Future<void> _sendWhatsApp(String number, String message) async {
-    String formattedNumber = number.startsWith("+91") ? number : "+91$number";
+  String formattedNumber = number.startsWith("+91") ? number : "+91$number";
 
-    final url = Uri.parse(
-      "https://wa.me/$formattedNumber?text=${Uri.encodeFull(message)}",
-    );
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+  // ✅ First, try launching via native WhatsApp scheme
+  final whatsappUri = Uri.parse("whatsapp://send?phone=$formattedNumber&text=${Uri.encodeComponent(message)}");
+
+  if (await canLaunchUrl(whatsappUri)) {
+    await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+  } else {
+    // ❌ Native failed — try web fallback
+    final webUri = Uri.parse("https://wa.me/$formattedNumber?text=${Uri.encodeFull(message)}");
+    if (await canLaunchUrl(webUri)) {
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
     } else {
-      throw "Could not open WhatsApp";
+      throw "Could not open WhatsApp (neither app nor web)";
     }
   }
+}
 
   Future<void> _handleSOS() async {
     setState(() => _isSending = true);
