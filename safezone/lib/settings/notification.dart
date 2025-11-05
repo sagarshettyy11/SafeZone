@@ -47,7 +47,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   showNotifications = value;
                 });
               },
-              activeColor: Colors.green,
+              activeThumbColor: Colors.green,
             ),
 
             const Divider(color: Colors.grey),
@@ -76,7 +76,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   reminders = value;
                 });
               },
-              activeColor: Colors.green,
+              activeThumbColor: Colors.green,
             ),
           ],
         ),

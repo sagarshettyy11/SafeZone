@@ -5,6 +5,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:another_telephony/telephony.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:logger/logger.dart';
 
 final telephony = Telephony.instance;
@@ -23,6 +25,9 @@ class _EmergencyPageState extends State<EmergencyPage> {
   final String policeNumber = "100";
   final String ambulanceNumber = "108";
   final String fireNumber = "101";
+
+  // 🔥 Your Firebase Cloud Messaging Server key (IMPORTANT)
+  static const String fcmServerKey = "YOUR_FCM_SERVER_KEY_HERE";
 
   Future<void> _requestPermissions() async {
     await Permission.location.request();
@@ -74,24 +79,54 @@ class _EmergencyPageState extends State<EmergencyPage> {
   }
 
   Future<void> _sendWhatsApp(String number, String message) async {
-  String formattedNumber = number.startsWith("+91") ? number : "+91$number";
+    String formattedNumber = number.startsWith("+91") ? number : "+91$number";
 
-  // ✅ First, try launching via native WhatsApp scheme
-  final whatsappUri = Uri.parse("whatsapp://send?phone=$formattedNumber&text=${Uri.encodeComponent(message)}");
+    final whatsappUri = Uri.parse(
+      "whatsapp://send?phone=$formattedNumber&text=${Uri.encodeComponent(message)}",
+    );
 
-  if (await canLaunchUrl(whatsappUri)) {
-    await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
-  } else {
-    // ❌ Native failed — try web fallback
-    final webUri = Uri.parse("https://wa.me/$formattedNumber?text=${Uri.encodeFull(message)}");
-    if (await canLaunchUrl(webUri)) {
-      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    if (await canLaunchUrl(whatsappUri)) {
+      await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
     } else {
-      throw "Could not open WhatsApp (neither app nor web)";
+      final webUri = Uri.parse(
+        "https://wa.me/$formattedNumber?text=${Uri.encodeFull(message)}",
+      );
+      if (await canLaunchUrl(webUri)) {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      } else {
+        throw "Could not open WhatsApp";
+      }
     }
   }
-}
 
+  // ✅ Send FCM notification
+  Future<void> _sendFcmNotification(
+      String targetToken, String message) async {
+    logger.i("Sending FCM to $targetToken");
+
+    final body = {
+      "to": targetToken,
+      "notification": {
+        "title": "🚨 Emergency Alert",
+        "body": message,
+        "sound": "default"
+      },
+      "data": {"type": "sos_alert", "message": message}
+    };
+
+    final response = await http.post(
+      Uri.parse("https://fcm.googleapis.com/fcm/send"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "key=$fcmServerKey",
+      },
+      body: jsonEncode(body),
+    );
+
+    logger.i("FCM Response: ${response.body}");
+  }
+
+  // ✅ Main SOS logic
   Future<void> _handleSOS() async {
     setState(() => _isSending = true);
     try {
@@ -110,22 +145,22 @@ class _EmergencyPageState extends State<EmergencyPage> {
       final message =
           "⚠️ I'm in emergency! My location: https://www.google.com/maps?q=${position.latitude},${position.longitude}";
 
-      // Send SMS & WhatsApp
       await _sendSMS(contact, message);
       await _sendWhatsApp(contact, message);
 
-      // ✅ Check if emergency contact is registered
-      final targetUser = await Supabase.instance.client
+      // ✅ Check if contact exists in app
+      final userQuery = await Supabase.instance.client
           .from('profiles')
-          .select('id')
+          .select('id, fcm_token')
           .eq('phone_number', contact)
           .maybeSingle();
 
-      if (targetUser != null) {
-        final targetId = targetUser['id'];
-        logger.i("Emergency contact $contact is registered with ID $targetId");
+      if (userQuery != null) {
+        final String targetId = userQuery['id'];
+        final String? targetToken = userQuery['fcm_token'];
 
-        // ✅ Insert in-app alert in Supabase
+        logger.i("Emergency contact is registered: ID => $targetId");
+
         await Supabase.instance.client.from('alerts').insert({
           'sender_id': Supabase.instance.client.auth.currentUser?.id,
           'receiver_id': targetId,
@@ -134,24 +169,32 @@ class _EmergencyPageState extends State<EmergencyPage> {
           'seen': false,
         });
 
-        // Optional: show immediate popup in-app
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("In-app alert sent to contact!")),
-          );
+        // ✅ Send Push Notification if token available
+        if (targetToken != null && targetToken.isNotEmpty) {
+          await _sendFcmNotification(targetToken, message);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Push notification sent!")),
+            );
+          }
         }
       }
 
       if (!mounted) return;
       ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("SOS sent successfully!")));
+          context
+      ).showSnackBar(
+        const SnackBar(content: Text("SOS sent successfully!")),
+      );
     } catch (e) {
       logger.e("SOS failed: $e");
       if (!mounted) return;
       ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("SOS failed: $e")));
+          context
+      ).showSnackBar(
+        SnackBar(content: Text("SOS failed: $e")),
+      );
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
@@ -194,7 +237,8 @@ class _EmergencyPageState extends State<EmergencyPage> {
         automaticallyImplyLeading: false,
         title: Text(
           "Emergency Help",
-          style: GoogleFonts.poppins(fontSize: 26, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+              fontSize: 26, fontWeight: FontWeight.bold),
         ),
       ),
       body: Column(
@@ -239,16 +283,8 @@ class _EmergencyPageState extends State<EmergencyPage> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildActionButton(Icons.local_police, "Police", policeNumber),
-              _buildActionButton(
-                Icons.local_hospital,
-                "Ambulance",
-                ambulanceNumber,
-              ),
-              _buildActionButton(
-                Icons.local_fire_department,
-                "Fire",
-                fireNumber,
-              ),
+              _buildActionButton(Icons.local_hospital, "Ambulance", ambulanceNumber),
+            _buildActionButton(Icons.local_fire_department, "Fire", fireNumber),
             ],
           ),
           const SizedBox(height: 40),
@@ -258,7 +294,6 @@ class _EmergencyPageState extends State<EmergencyPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             ),
             onPressed: () {
-              if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text("Location sharing not implemented yet"),

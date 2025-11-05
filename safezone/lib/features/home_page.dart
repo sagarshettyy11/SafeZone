@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 // Import your actual pages
 import 'map_page.dart';
@@ -24,6 +25,20 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _checkAuth();
+    saveUserFCMToken(); // ✅ Save token when dashboard loads
+  }
+
+  /// ✅ Save FCM token in Supabase
+  Future<void> saveUserFCMToken() async {
+    final token = await FirebaseMessaging.instance.getToken();
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+
+    if (userId != null && token != null) {
+      await Supabase.instance.client
+          .from('profiles')
+          .update({'fcm_token': token})
+          .eq('id', userId);
+    }
   }
 
   void _checkAuth() {
@@ -225,15 +240,14 @@ class HomeDashboardTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ✅ Greeting dynamically fetched
           FutureBuilder<String?>(
             future: _fetchDisplayName(),
             builder: (context, snapshot) {
               String greeting;
               if (snapshot.connectionState == ConnectionState.waiting) {
-                greeting = "Hello 👋"; // temporary while loading
+                greeting = "Hello 👋";
               } else if (snapshot.hasError) {
-                greeting = "Hello 👋"; // fallback if errorgit a
+                greeting = "Hello 👋";
               } else {
                 greeting = "Hello, ${snapshot.data ?? 'User'} 👋";
               }
@@ -257,7 +271,6 @@ class HomeDashboardTab extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Emergency Button -> jumps to SOS tab
           GestureDetector(
             onTap: () => onJumpToTab(2),
             child: Container(
@@ -284,7 +297,6 @@ class HomeDashboardTab extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Options Grid
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -334,7 +346,7 @@ class HomeDashboardTab extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.8), // ✅ modern API
+          color: color.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
