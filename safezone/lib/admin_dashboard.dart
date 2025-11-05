@@ -6,7 +6,7 @@ import 'package:logger/logger.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: "flutter.env");
 
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
