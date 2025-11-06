@@ -100,8 +100,7 @@ class _EmergencyPageState extends State<EmergencyPage> {
   }
 
   // ✅ Send FCM notification
-  Future<void> _sendFcmNotification(
-      String targetToken, String message) async {
+  Future<void> _sendFcmNotification(String targetToken, String message) async {
     logger.i("Sending FCM to $targetToken");
 
     final body = {
@@ -109,9 +108,9 @@ class _EmergencyPageState extends State<EmergencyPage> {
       "notification": {
         "title": "🚨 Emergency Alert",
         "body": message,
-        "sound": "default"
+        "sound": "default",
       },
-      "data": {"type": "sos_alert", "message": message}
+      "data": {"type": "sos_alert", "message": message},
     };
 
     final response = await http.post(
@@ -152,7 +151,7 @@ class _EmergencyPageState extends State<EmergencyPage> {
       final userQuery = await Supabase.instance.client
           .from('profiles')
           .select('id, fcm_token')
-          .eq('phone_number', contact)
+          .eq('phone', contact)
           .maybeSingle();
 
       if (userQuery != null) {
@@ -183,18 +182,14 @@ class _EmergencyPageState extends State<EmergencyPage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(
-          context
-      ).showSnackBar(
-        const SnackBar(content: Text("SOS sent successfully!")),
-      );
+        context,
+      ).showSnackBar(const SnackBar(content: Text("SOS sent successfully!")));
     } catch (e) {
       logger.e("SOS failed: $e");
       if (!mounted) return;
       ScaffoldMessenger.of(
-          context
-      ).showSnackBar(
-        SnackBar(content: Text("SOS failed: $e")),
-      );
+        context,
+      ).showSnackBar(SnackBar(content: Text("SOS failed: $e")));
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
@@ -237,8 +232,7 @@ class _EmergencyPageState extends State<EmergencyPage> {
         automaticallyImplyLeading: false,
         title: Text(
           "Emergency Help",
-          style: GoogleFonts.poppins(
-              fontSize: 26, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(fontSize: 26, fontWeight: FontWeight.bold),
         ),
       ),
       body: Column(
@@ -283,8 +277,16 @@ class _EmergencyPageState extends State<EmergencyPage> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildActionButton(Icons.local_police, "Police", policeNumber),
-              _buildActionButton(Icons.local_hospital, "Ambulance", ambulanceNumber),
-            _buildActionButton(Icons.local_fire_department, "Fire", fireNumber),
+              _buildActionButton(
+                Icons.local_hospital,
+                "Ambulance",
+                ambulanceNumber,
+              ),
+              _buildActionButton(
+                Icons.local_fire_department,
+                "Fire",
+                fireNumber,
+              ),
             ],
           ),
           const SizedBox(height: 40),
