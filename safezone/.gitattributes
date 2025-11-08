@@ -1,0 +1,4 @@
+build/* linguist-generated
+*.html linguist-generated
+*.js linguist-generated
+*.css linguist-generated
