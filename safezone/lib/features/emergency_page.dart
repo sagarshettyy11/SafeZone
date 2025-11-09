@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
@@ -8,6 +11,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:logger/logger.dart';
+
+// NEW
+import 'package:camera/camera.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 final telephony = Telephony.instance;
 final logger = Logger();
@@ -22,17 +30,60 @@ class EmergencyPage extends StatefulWidget {
 class _EmergencyPageState extends State<EmergencyPage> {
   bool _isSending = false;
 
+  // Camera
+  CameraController? _cameraController;
+  List<CameraDescription>? _cameras;
+
   final String policeNumber = "100";
   final String ambulanceNumber = "108";
   final String fireNumber = "101";
 
-  // 🔥 Your Firebase Cloud Messaging Server key (IMPORTANT)
   static const String fcmServerKey = "YOUR_FCM_SERVER_KEY_HERE";
 
+  @override
+  void initState() {
+    super.initState();
+    _initCamera();
+  }
+
+  @override
+  void dispose() {
+    _cameraController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initCamera() async {
+    try {
+      _cameras = await availableCameras();
+      final back = _cameras!.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.back,
+        orElse: () => _cameras!.first,
+      );
+
+      _cameraController = CameraController(
+        back,
+        ResolutionPreset.medium,
+        enableAudio: true,
+      );
+
+      await _cameraController!.initialize();
+      logger.i("Camera initialized");
+      setState(() {}); // so UI can react if you add a preview later
+    } catch (e) {
+      logger.e("Camera init failed: $e");
+    }
+  }
+
   Future<void> _requestPermissions() async {
-    await Permission.location.request();
-    await Permission.sms.request();
-    await Permission.phone.request();
+    await [
+      Permission.location,
+      Permission.sms,
+      Permission.phone,
+      Permission.camera,
+      Permission.microphone,
+      // Storage only needed on some Android versions:
+      Permission.storage,
+    ].request();
   }
 
   Future<Position> _getCurrentLocation() async {
@@ -48,13 +99,8 @@ class _EmergencyPageState extends State<EmergencyPage> {
       }
     }
 
-    LocationSettings locationSettings = const LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
-    );
-
     return await Geolocator.getCurrentPosition(
-      locationSettings: locationSettings,
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     );
   }
 
@@ -99,7 +145,6 @@ class _EmergencyPageState extends State<EmergencyPage> {
     }
   }
 
-  // ✅ Send FCM notification
   Future<void> _sendFcmNotification(String targetToken, String message) async {
     logger.i("Sending FCM to $targetToken");
 
@@ -122,10 +167,78 @@ class _EmergencyPageState extends State<EmergencyPage> {
       body: jsonEncode(body),
     );
 
-    logger.i("FCM Response: ${response.body}");
+    logger.i("FCM Response: ${response.statusCode} ${response.body}");
   }
 
-  // ✅ Main SOS logic
+  /// --- NEW: Record a 15s video, upload to Supabase Storage, insert DB row ---
+  Future<void> _recordAndUploadVideo15s({
+    required double lat,
+    required double lng,
+  }) async {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
+    if (user == null) throw "Not logged in";
+
+    // Fallback user_name: read from profiles.name if you have it; else email/UID
+    String userName = user.email ?? user.id;
+    try {
+      final prof = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', user.id)
+          .maybeSingle();
+      if (prof != null && (prof['name'] as String?)?.isNotEmpty == true) {
+        userName = prof['name'];
+      }
+    } catch (_) {}
+
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      await _initCamera();
+      if (_cameraController == null ||
+          !_cameraController!.value.isInitialized) {
+        throw "Camera not available";
+      }
+    }
+
+    // Prepare a temp file path
+    final tmpDir = await getTemporaryDirectory();
+    final fileName = "${DateTime.now().millisecondsSinceEpoch}.mp4";
+    final tmpPath = p.join(tmpDir.path, fileName);
+
+    // Start recording
+    await _cameraController!.startVideoRecording();
+    logger.i("Recording started");
+
+    // Record for ~15 seconds
+    await Future.delayed(const Duration(seconds: 15));
+
+    // Stop recording & save file
+    final XFile recorded = await _cameraController!.stopVideoRecording();
+    logger.i("Recording stopped: ${recorded.path}");
+
+    // Some Android devices save to a content URI path. Copy to tmp if needed.
+    final File videoFile = await File(
+      recorded.path,
+    ).copy(tmpPath); // ensure we have a File
+
+    // Upload to Storage
+    final storagePath = 'emergency/${user.id}/$fileName';
+    await supabase.storage.from('emergency').upload(storagePath, videoFile);
+    logger.i("Uploaded to storage: $storagePath");
+
+    // Insert DB row
+    await supabase.from('emergency_details').insert({
+      'user_id': user.id,
+      'user_name': userName,
+      'latitude': lat,
+      'longitude': lng,
+      'video_path': storagePath, // you renamed from video_link earlier
+    });
+
+    logger.i("DB row inserted for emergency_details");
+  }
+
+  // Main SOS
   Future<void> _handleSOS() async {
     setState(() => _isSending = true);
     try {
@@ -141,13 +254,21 @@ class _EmergencyPageState extends State<EmergencyPage> {
       }
 
       final position = await _getCurrentLocation();
+
+      // 1) Record + upload + insert row
+      await _recordAndUploadVideo15s(
+        lat: position.latitude,
+        lng: position.longitude,
+      );
+
+      // 2) Notify contacts as you already do
       final message =
           "⚠️ I'm in emergency! My location: https://www.google.com/maps?q=${position.latitude},${position.longitude}";
 
       await _sendSMS(contact, message);
       await _sendWhatsApp(contact, message);
 
-      // ✅ Check if contact exists in app
+      // Check if contact is a registered user and send FCM
       final userQuery = await Supabase.instance.client
           .from('profiles')
           .select('id, fcm_token')
@@ -158,8 +279,6 @@ class _EmergencyPageState extends State<EmergencyPage> {
         final String targetId = userQuery['id'];
         final String? targetToken = userQuery['fcm_token'];
 
-        logger.i("Emergency contact is registered: ID => $targetId");
-
         await Supabase.instance.client.from('alerts').insert({
           'sender_id': Supabase.instance.client.auth.currentUser?.id,
           'receiver_id': targetId,
@@ -168,10 +287,8 @@ class _EmergencyPageState extends State<EmergencyPage> {
           'seen': false,
         });
 
-        // ✅ Send Push Notification if token available
         if (targetToken != null && targetToken.isNotEmpty) {
           await _sendFcmNotification(targetToken, message);
-
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Push notification sent!")),
