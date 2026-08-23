@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,7 +18,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emergencyController = TextEditingController();
 
-  File? _imageFile;
+  Uint8List? _imageBytes;
   String? _profileUrl;
 
   @override
@@ -62,18 +62,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _imageFile = File(pickedFile.path);
+        _imageBytes = bytes;
       });
     }
   }
 
-  Future<String?> _uploadImage(File file, String userId) async {
+  Future<String?> _uploadImage(Uint8List bytes, String userId) async {
     try {
-      final fileName = "profile_$userId.jpg";
+      final fileName =
+          "profile_${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg";
       await supabase.storage
           .from("profile-images")
-          .upload(fileName, file, fileOptions: const FileOptions(upsert: true));
+          .uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: const FileOptions(
+              upsert: true,
+              contentType: 'image/jpeg',
+            ),
+          );
 
       final publicUrl = supabase.storage
           .from("profile-images")
@@ -94,27 +103,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     String? imageUrl = _profileUrl;
 
-    if (_imageFile != null) {
-      imageUrl = await _uploadImage(_imageFile!, user.id);
+    if (_imageBytes != null) {
+      imageUrl = await _uploadImage(_imageBytes!, user.id);
     }
 
     try {
-      await supabase
-          .from("profiles")
-          .update({
-            "display_name": _nameController.text.trim(),
-            "phone": _phoneController.text.trim(),
-            "emergency_contact": _emergencyController.text.trim(),
-            if (imageUrl != null) "profile_image_url": imageUrl,
-          })
-          .eq("id", user.id);
+      await supabase.from("profiles").upsert({
+        "id": user.id,
+        "display_name": _nameController.text.trim(),
+        "phone": _phoneController.text.trim(),
+        "emergency_contact": _emergencyController.text.trim(),
+        if (imageUrl != null) "profile_image_url": imageUrl,
+      });
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Profile updated successfully")),
       );
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -144,14 +151,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: CircleAvatar(
                     radius: 50,
                     backgroundColor: Colors.grey[200],
-                    backgroundImage: _imageFile != null
-                        ? FileImage(_imageFile!)
+                    backgroundImage: _imageBytes != null
+                        ? MemoryImage(_imageBytes!)
                         : (_profileUrl != null && _profileUrl!.isNotEmpty
                               ? NetworkImage(_profileUrl!) as ImageProvider
                               : null),
                     child: Stack(
                       children: [
-                        if (_imageFile == null &&
+                        if (_imageBytes == null &&
                             (_profileUrl == null || _profileUrl!.isEmpty))
                           const Center(
                             child: Icon(

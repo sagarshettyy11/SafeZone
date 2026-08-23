@@ -219,8 +219,7 @@ class _AccountPageState extends State<AccountPage> {
               try {
                 await Supabase.instance.client
                     .from("profiles")
-                    .update({fieldName: newValue})
-                    .eq("id", userId);
+                    .upsert({"id": userId, fieldName: newValue});
 
                 if (!mounted) return; // ✅ safe check
                 ScaffoldMessenger.of(context).showSnackBar(

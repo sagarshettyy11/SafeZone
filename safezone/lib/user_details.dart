@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -20,7 +20,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
   final addressController = TextEditingController();
   final bioController = TextEditingController();
 
-  File? _selectedImage;
+  Uint8List? _imageBytes;
   bool _isLoading = false;
 
   // Pick image from gallery
@@ -29,8 +29,9 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
     final picked = await picker.pickImage(source: ImageSource.gallery);
 
     if (picked != null) {
+      final bytes = await picked.readAsBytes();
       setState(() {
-        _selectedImage = File(picked.path);
+        _imageBytes = bytes;
       });
     }
   }
@@ -51,14 +52,21 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       String? imageUrl;
 
       // Upload image to Supabase Storage
-      if (_selectedImage != null) {
+      if (_imageBytes != null) {
         final fileName =
             "${user.id}_${DateTime.now().millisecondsSinceEpoch}.jpg";
 
         // Upload file
         await Supabase.instance.client.storage
             .from('profile-images')
-            .upload(fileName, _selectedImage!);
+            .uploadBinary(
+              fileName,
+              _imageBytes!,
+              fileOptions: const FileOptions(
+                upsert: true,
+                contentType: 'image/jpeg',
+              ),
+            );
 
         // Get public URL (direct String in supabase_flutter v2.x)
         imageUrl = Supabase.instance.client.storage
@@ -147,10 +155,10 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                   child: CircleAvatar(
                     radius: 50,
                     backgroundColor: const Color(0xFFE8EAFA),
-                    backgroundImage: _selectedImage != null
-                        ? FileImage(_selectedImage!)
+                    backgroundImage: _imageBytes != null
+                        ? MemoryImage(_imageBytes!)
                         : null,
-                    child: _selectedImage == null
+                    child: _imageBytes == null
                         ? const Icon(
                             Icons.camera_alt,
                             size: 40,

@@ -8,9 +8,14 @@ import 'package:safezone/settings/privacy_page.dart';
 import 'package:safezone/settings/edit_profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
   Future<Map<String, dynamic>?> getUserData() async {
     final supabase = Supabase.instance.client;
     final user = supabase.auth.currentUser;
@@ -140,13 +145,16 @@ class SettingsPage extends StatelessWidget {
                   subtitle,
                   style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
                 ),
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const EditProfilePage(),
                     ),
                   );
+                  if (result == true && mounted) {
+                    setState(() {});
+                  }
                 },
               ),
 
