@@ -30,14 +30,18 @@ class _HomePageState extends State<HomePage> {
 
   /// ✅ Save FCM token in Supabase
   Future<void> saveUserFCMToken() async {
-    final token = await FirebaseMessaging.instance.getToken();
-    final userId = Supabase.instance.client.auth.currentUser?.id;
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      final userId = Supabase.instance.client.auth.currentUser?.id;
 
-    if (userId != null && token != null) {
-      await Supabase.instance.client
-          .from('profiles')
-          .update({'fcm_token': token})
-          .eq('id', userId);
+      if (userId != null && token != null) {
+        await Supabase.instance.client
+            .from('profiles')
+            .update({'fcm_token': token})
+            .eq('id', userId);
+      }
+    } catch (e) {
+      debugPrint('FCM token error (safe to ignore on web/dev): $e');
     }
   }
 
@@ -120,6 +124,9 @@ class _HomePageState extends State<HomePage> {
                       profileUrl = snapshot.data!['profile_url'];
                     }
 
+                    final bool hasImage =
+                        profileUrl != null && profileUrl.isNotEmpty;
+
                     return GestureDetector(
                       onTap: () => _onItemTapped(4), // jump to Profile tab
                       child: Padding(
@@ -128,16 +135,17 @@ class _HomePageState extends State<HomePage> {
                           radius: 16,
                           backgroundColor: Colors.grey[300],
                           backgroundImage:
-                              (profileUrl != null && profileUrl.isNotEmpty)
-                              ? NetworkImage(profileUrl)
+                              hasImage ? NetworkImage(profileUrl) : null,
+                          onBackgroundImageError: hasImage
+                              ? (_, _) {
+                                  if (mounted) {
+                                    setState(() {
+                                      profileUrl = null;
+                                    });
+                                  }
+                                }
                               : null,
-                          onBackgroundImageError: (_, _) {
-                            // Fallback to default icon if image fails
-                            setState(() {
-                              profileUrl = null;
-                            });
-                          },
-                          child: (profileUrl == null || profileUrl.isEmpty)
+                          child: !hasImage
                               ? const Icon(
                                   Icons.person,
                                   color: Colors.black,

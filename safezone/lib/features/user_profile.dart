@@ -20,7 +20,7 @@ class SettingsPage extends StatelessWidget {
     // Query the profiles table for logged-in user
     final response = await supabase
         .from('profiles')
-        .select('username, user_bio, profile_image_url')
+        .select('display_name, phone, emergency_contact, profile_image_url')
         .eq('id', user.id)
         .maybeSingle();
 
@@ -74,8 +74,11 @@ class SettingsPage extends StatelessWidget {
           }
 
           final data = snapshot.data;
-          final username = data?['username'] ?? "Unknown User";
-          final bio = data?['user_bio'] ?? "No bio added";
+          final user = Supabase.instance.client.auth.currentUser;
+          final displayName = data?['display_name'] ??
+              user?.email?.split('@').first ??
+              "User";
+          final subtitle = data?['phone'] ?? user?.email ?? "No contact added";
           final String? profileUrl = data?['profile_url'];
 
           return ListView(
@@ -108,23 +111,25 @@ class SettingsPage extends StatelessWidget {
                 leading: CircleAvatar(
                   radius: 25,
                   backgroundColor: Colors.grey[300],
-                  backgroundImage: profileUrl != null
-                      ? NetworkImage(profileUrl)
-                      : null,
-                  onBackgroundImageError: profileUrl != null
-                      ? (_, _) {
-                          debugPrint(
-                            "❌ Failed to load profile image: $profileUrl",
-                          );
-                        }
-                      : null,
-                  child: profileUrl == null
+                  backgroundImage:
+                      (profileUrl != null && profileUrl.isNotEmpty)
+                          ? NetworkImage(profileUrl)
+                          : null,
+                  onBackgroundImageError:
+                      (profileUrl != null && profileUrl.isNotEmpty)
+                          ? (_, _) {
+                              debugPrint(
+                                "❌ Failed to load profile image: $profileUrl",
+                              );
+                            }
+                          : null,
+                  child: (profileUrl == null || profileUrl.isEmpty)
                       ? const Icon(Icons.person, color: Colors.black, size: 30)
                       : null,
                 ),
 
                 title: Text(
-                  username,
+                  displayName,
                   style: GoogleFonts.poppins(
                     color: Colors.black,
                     fontSize: 18,
@@ -132,7 +137,7 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
                 subtitle: Text(
-                  bio,
+                  subtitle,
                   style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
                 ),
                 onTap: () {

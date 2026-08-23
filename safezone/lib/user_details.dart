@@ -70,11 +70,8 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       final response = await Supabase.instance.client.from('profiles').upsert({
         'id': user.id,
         'display_name': displayNameController.text.trim(),
-        'username': usernameController.text.trim(),
         'phone': phoneController.text.trim(),
         'emergency_contact': emergencyController.text.trim(),
-        'address': addressController.text.trim(),
-        'user_bio': bioController.text.trim(),
         if (imageUrl != null) 'profile_image_url': imageUrl,
       }).select();
 

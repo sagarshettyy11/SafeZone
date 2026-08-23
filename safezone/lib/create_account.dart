@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -21,14 +22,19 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
   // Request necessary permissions
   Future<void> _requestPermissions() async {
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.location,
-      Permission.sms,
-      Permission.phone,
-      Permission.storage,
-    ].request();
+    if (kIsWeb) return;
+    try {
+      Map<Permission, PermissionStatus> statuses = await [
+        Permission.location,
+        Permission.sms,
+        Permission.phone,
+        Permission.storage,
+      ].request();
 
-    logger.i("Permission statuses: $statuses");
+      logger.i("Permission statuses: $statuses");
+    } catch (e) {
+      logger.w("Permission request failed: $e");
+    }
   }
 
   Future<void> _signUp() async {

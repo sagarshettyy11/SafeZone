@@ -14,8 +14,9 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   final supabase = Supabase.instance.client;
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _bioController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emergencyController = TextEditingController();
 
   File? _imageFile;
   String? _profileUrl;
@@ -26,13 +27,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _loadProfileData();
   }
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _emergencyController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadProfileData() async {
     final user = supabase.auth.currentUser;
     if (user == null) return;
 
     final response = await supabase
         .from("profiles")
-        .select("username, user_bio, profile_url")
+        .select("display_name, phone, emergency_contact, profile_image_url")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -40,9 +49,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     if (response != null) {
       setState(() {
-        _usernameController.text = response["username"] ?? "";
-        _bioController.text = response["user_bio"] ?? "";
-        _profileUrl = response["profile_url"];
+        _nameController.text = response["display_name"] ?? "";
+        _phoneController.text = response["phone"] ?? "";
+        _emergencyController.text = response["emergency_contact"] ?? "";
+        _profileUrl = response["profile_image_url"];
       });
     }
   }
@@ -62,11 +72,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       final fileName = "profile_$userId.jpg";
       await supabase.storage
-          .from("profile_images")
+          .from("profile-images")
           .upload(fileName, file, fileOptions: const FileOptions(upsert: true));
 
       final publicUrl = supabase.storage
-          .from("profile_images")
+          .from("profile-images")
           .getPublicUrl(fileName);
       return publicUrl;
     } catch (e) {
@@ -92,9 +102,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       await supabase
           .from("profiles")
           .update({
-            "username": _usernameController.text.trim(),
-            "user_bio": _bioController.text.trim(),
-            "profile_url": imageUrl,
+            "display_name": _nameController.text.trim(),
+            "phone": _phoneController.text.trim(),
+            "emergency_contact": _emergencyController.text.trim(),
+            if (imageUrl != null) "profile_image_url": imageUrl,
           })
           .eq("id", user.id);
 
@@ -132,38 +143,60 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onTap: _pickImage,
                   child: CircleAvatar(
                     radius: 50,
+                    backgroundColor: Colors.grey[200],
                     backgroundImage: _imageFile != null
                         ? FileImage(_imageFile!)
-                        : (_profileUrl != null
+                        : (_profileUrl != null && _profileUrl!.isNotEmpty
                               ? NetworkImage(_profileUrl!) as ImageProvider
-                              : const AssetImage("assets/default_avatar.png")),
-                    child: Align(
-                      alignment: Alignment.bottomRight,
-                      child: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.blue,
-                        child: const Icon(
-                          Icons.edit,
-                          color: Colors.white,
-                          size: 18,
+                              : null),
+                    child: Stack(
+                      children: [
+                        if (_imageFile == null &&
+                            (_profileUrl == null || _profileUrl!.isEmpty))
+                          const Center(
+                            child: Icon(
+                              Icons.person,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Colors.blue,
+                            child: const Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
               TextFormField(
-                controller: _usernameController,
-                decoration: const InputDecoration(labelText: "Username"),
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: "Display Name"),
                 validator: (val) =>
-                    val == null || val.isEmpty ? "Enter username" : null,
+                    val == null || val.isEmpty ? "Enter display name" : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
-                controller: _bioController,
-                decoration: const InputDecoration(labelText: "Bio"),
-                maxLines: 3,
+                controller: _phoneController,
+                decoration: const InputDecoration(labelText: "Phone Number"),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emergencyController,
+                decoration: const InputDecoration(
+                  labelText: "Emergency Contact Number",
+                ),
+                keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 24),
               ElevatedButton(

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
@@ -17,7 +17,6 @@ import 'package:camera/camera.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-final telephony = Telephony.instance;
 final logger = Logger();
 
 class EmergencyPage extends StatefulWidget {
@@ -43,7 +42,9 @@ class _EmergencyPageState extends State<EmergencyPage> {
   @override
   void initState() {
     super.initState();
-    _initCamera();
+    if (!kIsWeb) {
+      _initCamera();
+    }
   }
 
   @override
@@ -53,8 +54,10 @@ class _EmergencyPageState extends State<EmergencyPage> {
   }
 
   Future<void> _initCamera() async {
+    if (kIsWeb) return;
     try {
       _cameras = await availableCameras();
+      if (_cameras == null || _cameras!.isEmpty) return;
       final back = _cameras!.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.back,
         orElse: () => _cameras!.first,
@@ -68,22 +71,26 @@ class _EmergencyPageState extends State<EmergencyPage> {
 
       await _cameraController!.initialize();
       logger.i("Camera initialized");
-      setState(() {}); // so UI can react if you add a preview later
+      if (mounted) setState(() {});
     } catch (e) {
       logger.e("Camera init failed: $e");
     }
   }
 
   Future<void> _requestPermissions() async {
-    await [
-      Permission.location,
-      Permission.sms,
-      Permission.phone,
-      Permission.camera,
-      Permission.microphone,
-      // Storage only needed on some Android versions:
-      Permission.storage,
-    ].request();
+    if (kIsWeb) return;
+    try {
+      await [
+        Permission.location,
+        Permission.sms,
+        Permission.phone,
+        Permission.camera,
+        Permission.microphone,
+        Permission.storage,
+      ].request();
+    } catch (e) {
+      logger.w("Permission request error: $e");
+    }
   }
 
   Future<Position> _getCurrentLocation() async {
@@ -120,8 +127,25 @@ class _EmergencyPageState extends State<EmergencyPage> {
   }
 
   Future<void> _sendSMS(String number, String message) async {
-    await telephony.sendSms(to: number, message: message, isMultipart: true);
-    logger.i("SMS sent to $number");
+    if (kIsWeb) {
+      final smsUri = Uri.parse(
+        "sms:$number?body=${Uri.encodeComponent(message)}",
+      );
+      if (await canLaunchUrl(smsUri)) {
+        await launchUrl(smsUri);
+      }
+      return;
+    }
+    try {
+      await Telephony.instance.sendSms(
+        to: number,
+        message: message,
+        isMultipart: true,
+      );
+      logger.i("SMS sent to $number");
+    } catch (e) {
+      logger.e("Failed to send SMS via telephony: $e");
+    }
   }
 
   Future<void> _sendWhatsApp(String number, String message) async {
@@ -170,11 +194,14 @@ class _EmergencyPageState extends State<EmergencyPage> {
     logger.i("FCM Response: ${response.statusCode} ${response.body}");
   }
 
-  /// --- NEW: Record a 15s video, upload to Supabase Storage, insert DB row ---
   Future<void> _recordAndUploadVideo15s({
     required double lat,
     required double lng,
   }) async {
+    if (kIsWeb) {
+      logger.i("Video recording skipped on web platform");
+      return;
+    }
     final supabase = Supabase.instance.client;
     final user = supabase.auth.currentUser;
     if (user == null) throw "Not logged in";
@@ -184,11 +211,12 @@ class _EmergencyPageState extends State<EmergencyPage> {
     try {
       final prof = await supabase
           .from('profiles')
-          .select('name')
+          .select('display_name')
           .eq('id', user.id)
           .maybeSingle();
-      if (prof != null && (prof['name'] as String?)?.isNotEmpty == true) {
-        userName = prof['name'];
+      if (prof != null &&
+          (prof['display_name'] as String?)?.isNotEmpty == true) {
+        userName = prof['display_name'];
       }
     } catch (_) {}
 

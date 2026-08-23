@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -97,6 +96,8 @@ class ComplaintPageState extends State<ComplaintPage> {
 
   bool _loading = false;
 
+  XFile? _selectedMedia;
+
   // Pick media from gallery
   Future<void> _pickMedia() async {
     final picker = ImagePicker();
@@ -106,7 +107,8 @@ class ComplaintPageState extends State<ComplaintPage> {
 
     if (pickedFile != null) {
       setState(() {
-        mediaPath = pickedFile.path;
+        _selectedMedia = pickedFile;
+        mediaPath = pickedFile.name;
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -123,15 +125,15 @@ class ComplaintPageState extends State<ComplaintPage> {
   }
 
   // Upload image to Supabase Storage (complaint_media bucket)
-  Future<String?> _uploadImageToSupabase(String filePath) async {
+  Future<String?> _uploadImageToSupabase(XFile file) async {
     try {
-      final file = File(filePath);
       final fileName =
-          'complaints/${DateTime.now().millisecondsSinceEpoch}_${file.path.split("/").last}';
+          'complaints/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+      final bytes = await file.readAsBytes();
 
       await Supabase.instance.client.storage
-          .from('complaint_media') // updated bucket name
-          .uploadBinary(fileName, await file.readAsBytes());
+          .from('complaint_media')
+          .uploadBinary(fileName, bytes);
 
       final publicUrl = Supabase.instance.client.storage
           .from('complaint_media')
@@ -273,8 +275,8 @@ class ComplaintPageState extends State<ComplaintPage> {
 
     try {
       String? uploadedUrl;
-      if (mediaPath != null) {
-        uploadedUrl = await _uploadImageToSupabase(mediaPath!);
+      if (_selectedMedia != null) {
+        uploadedUrl = await _uploadImageToSupabase(_selectedMedia!);
       }
 
       final response = await Supabase.instance.client.from('complaints').insert({
@@ -303,6 +305,7 @@ class ComplaintPageState extends State<ComplaintPage> {
         descriptionController.clear();
         proofLinkController.clear();
         mediaPath = null;
+        _selectedMedia = null;
         latitude = null;
         longitude = null;
       });

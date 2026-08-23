@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:safezone/features/home_page.dart';
 import 'package:safezone/admin_dashboard.dart'; // ✅ Make sure you create this file/page
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -57,6 +58,13 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response.user != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true);
+        await prefs.setString('user_id', response.user!.id);
+        if (response.user!.email != null) {
+          await prefs.setString('user_email', response.user!.email!);
+        }
+
         if (!mounted) return;
         Navigator.pushReplacement(
           context,

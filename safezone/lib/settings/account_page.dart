@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -65,6 +66,10 @@ class _AccountPageState extends State<AccountPage> {
                 ),
               ),
               onPressed: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('is_logged_in', false);
+                await prefs.remove('user_id');
+                await prefs.remove('user_email');
                 await supabase.auth.signOut();
 
                 if (!context.mounted) return; // ✅ safe check
@@ -73,7 +78,11 @@ class _AccountPageState extends State<AccountPage> {
                   const SnackBar(content: Text("Logged out successfully")),
                 );
 
-                Navigator.pushReplacementNamed(context, '/login');
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/welcome',
+                  (_) => false,
+                );
               },
               child: Text(
                 "Logout",

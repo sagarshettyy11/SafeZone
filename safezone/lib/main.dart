@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_fonts/google_fonts.dart'; // ✅ Import Google Fonts
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'welcome_page.dart';
 import 'login_page.dart';
 import 'create_account.dart';
 import 'reset_password.dart';
+import 'features/home_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Load environment variables
-  await dotenv.load(fileName: "flutter.env"); // Ensure file is named .env
+  await dotenv.load(fileName: "flutter.env");
 
   // Initialize Supabase
   await Supabase.initialize(
@@ -78,11 +80,64 @@ class _MyAppState extends State<MyApp> {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const WelcomeScreen(),
+        '/': (context) => const AuthGate(),
+        '/welcome': (context) => const WelcomeScreen(),
+        '/home': (context) => const HomePage(),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const CreateAccountPage(),
         '/reset-password': (context) => const ResetPasswordPage(),
       },
     );
+  }
+}
+
+/// ✅ AuthGate to check SharedPreferences and Supabase session on app startup
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool _isLoading = true;
+  bool _isAuthenticated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bool isLoggedPref = prefs.getBool('is_logged_in') ?? false;
+    final session = Supabase.instance.client.auth.currentSession;
+    final user = Supabase.instance.client.auth.currentUser;
+
+    if (mounted) {
+      setState(() {
+        _isAuthenticated = (session != null || (isLoggedPref && user != null));
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_isAuthenticated) {
+      return const HomePage();
+    }
+
+    return const WelcomeScreen();
   }
 }
