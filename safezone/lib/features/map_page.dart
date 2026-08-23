@@ -8,8 +8,9 @@ import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-const String googleApiKey = "YOUR_API_KEY"; // replace with your Google API key
+String get googleApiKey => dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});

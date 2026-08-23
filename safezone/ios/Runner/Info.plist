@@ -5,7 +5,15 @@
     <key>GMSApiKey</key>
     <string>ANT_MU6ySdMEaqpVhqQf3kpSIWELajWrs</string>
 	<key>NSLocationWhenInUseUsageDescription</key> 
-    <string>This app uses your location to show your position on the map.</string>
+    <string>SafeZone uses your location to display danger zones on the map and share GPS coordinates during SOS emergencies.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key> 
+    <string>SafeZone uses your location to track and send your real-time position during an active SOS distress alert.</string>
+	<key>NSCameraUsageDescription</key> 
+    <string>SafeZone requires camera access to capture evidence during an emergency SOS and upload profile photos.</string>
+	<key>NSMicrophoneUsageDescription</key> 
+    <string>SafeZone requires microphone access to record audio along with emergency SOS video recordings.</string>
+	<key>NSPhotoLibraryUsageDescription</key> 
+    <string>SafeZone requires access to your photo library to select complaint proof images and profile pictures.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

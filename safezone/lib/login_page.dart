@@ -42,7 +42,24 @@ class _LoginPageState extends State<LoginPage> {
 
     // ✅ First check for admin login
     if (email == adminEmail && password == adminPassword) {
+      try {
+        await Supabase.instance.client.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+      } catch (e) {
+        debugPrint("Admin Supabase auth note: $e");
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', true);
+      await prefs.setBool('is_admin', true);
+      await prefs.setString('user_email', adminEmail);
+
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Logged in as Admin")),
+      );
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const AdminDashboard()),

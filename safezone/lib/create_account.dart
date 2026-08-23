@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:safezone/user_details.dart';
 import 'package:logger/logger.dart';
@@ -68,6 +69,10 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         // Request permissions immediately
         await _requestPermissions();
 
+        // Save persistent login session
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true);
+
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -78,7 +83,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         );
 
         // Navigate to User Details Page
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const UserDetailsPage()),
         );
