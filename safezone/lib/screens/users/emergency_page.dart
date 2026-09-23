@@ -20,7 +20,6 @@ class _EmergencyPageState extends State<EmergencyPage> {
   final _authService = AuthService();
 
   CameraController? _cameraController;
-  List<CameraDescription>? _cameras;
 
   bool _isSending = false;
   String? _emergencyContact;
@@ -30,9 +29,6 @@ class _EmergencyPageState extends State<EmergencyPage> {
   void initState() {
     super.initState();
     _loadEmergencyContact();
-    if (!kIsWeb) {
-      _initCamera();
-    }
   }
 
   @override
@@ -48,33 +44,6 @@ class _EmergencyPageState extends State<EmergencyPage> {
       if (mounted) {
         setState(() => _emergencyContact = contact);
       }
-    }
-  }
-
-  Future<void> _initCamera() async {
-    if (kIsWeb) return;
-    try {
-      final status = await Permission.camera.status;
-      if (!status.isGranted) return;
-
-      _cameras = await availableCameras();
-      if (_cameras == null || _cameras!.isEmpty) return;
-
-      final back = _cameras!.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.back,
-        orElse: () => _cameras!.first,
-      );
-
-      _cameraController = CameraController(
-        back,
-        ResolutionPreset.medium,
-        enableAudio: true,
-      );
-
-      await _cameraController!.initialize();
-      if (mounted) setState(() {});
-    } catch (e) {
-      debugPrint("EmergencyPage camera init notice: $e");
     }
   }
 
@@ -117,14 +86,29 @@ class _EmergencyPageState extends State<EmergencyPage> {
         _statusMessage = "Capturing video evidence (15s) & notifying contact...";
       });
 
-      // 3. Record video if camera ready
-      if (!kIsWeb && _cameraController != null && _cameraController!.value.isInitialized) {
+      // 3. Record video on-demand if camera available
+      if (!kIsWeb) {
         try {
-          await _userService.recordAndUploadVideo15s(
-            cameraController: _cameraController!,
-            lat: lat,
-            lng: lng,
-          );
+          final cameras = await availableCameras();
+          if (cameras.isNotEmpty) {
+            final back = cameras.firstWhere(
+              (c) => c.lensDirection == CameraLensDirection.back,
+              orElse: () => cameras.first,
+            );
+            _cameraController = CameraController(
+              back,
+              ResolutionPreset.medium,
+              enableAudio: true,
+            );
+            await _cameraController!.initialize();
+            await _userService.recordAndUploadVideo15s(
+              cameraController: _cameraController!,
+              lat: lat,
+              lng: lng,
+            );
+            await _cameraController?.dispose();
+            _cameraController = null;
+          }
         } catch (e) {
           debugPrint("Video recording/upload note: $e");
         }
